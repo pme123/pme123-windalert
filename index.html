@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Wind Alert</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
   <style>
     :root {
       --bg: #0f172a;
@@ -271,6 +272,31 @@
       align-items: end;
     }
     @media (max-width: 600px) { .station-grid { grid-template-columns: 1fr; } }
+    /* ── Chart ── */
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .range-btns { display: flex; gap: 6px; }
+    .range-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: .72rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .range-btn.active {
+      background: rgba(56,189,248,.15);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .chart-wrap { position: relative; height: 160px; }
     /* ── Search Dropdown ── */
     .search-wrap { position: relative; }
     .search-row { display: flex; gap: 6px; }
@@ -439,6 +465,22 @@
       </svg>
       <div style="font-size:.82rem; color:var(--muted); text-align:center" id="compass-lbl">– –</div>
     </div>
+  </div>
+
+  <!-- History Chart -->
+  <div class="card span2" id="chart-card">
+    <div class="chart-header">
+      <div class="card-title" style="margin:0">Verlauf</div>
+      <div class="range-btns">
+        <button class="range-btn active" onclick="loadChart(24,this)">24h</button>
+        <button class="range-btn" onclick="loadChart(48,this)">48h</button>
+        <button class="range-btn" onclick="loadChart(168,this)">7d</button>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="wind-chart"></canvas>
+    </div>
+    <div class="ts" id="chart-status" style="margin-top:8px; text-align:center"></div>
   </div>
 
   <!-- Thresholds -->
@@ -738,6 +780,7 @@ function selectOWM(id, name) {
   closeAllDropdowns();
   saveConfig();
   fetchNow();
+  loadChart(chartHours);
 }
 
 
@@ -955,12 +998,140 @@ function restartPolling() {
   }, 1000);
 }
 
+// ── History Chart ─────────────────────────────────────────────────────────────
+const ARCHIVE = 'https://api.pioupiou.fr/v1/archive/';
+let chartHours = 24;
+let windChart  = null;
+
+async function loadChart(hours, btn) {
+  chartHours = hours;
+  document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+
+  const sid = $('station-id').value.trim();
+  if (!sid) return;
+
+  $('chart-status').textContent = 'Lade Verlaufsdaten…';
+  const stop  = new Date();
+  const start = new Date(stop - hours * 3600 * 1000);
+  const url   = `${ARCHIVE}${sid}?start=${start.toISOString()}&stop=${stop.toISOString()}`;
+
+  try {
+    const r    = await fetch(url);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const json = await r.json();
+    renderChart(json.data || [], hours);
+    $('chart-status').textContent = `${json.data?.length || 0} Messpunkte`;
+  } catch(e) {
+    $('chart-status').textContent = `Fehler: ${e.message}`;
+  }
+}
+
+function renderChart(rows, hours) {
+  // rows: [time, lat, lon, min, avg, max, heading, pressure]
+  const labels = rows.map(r => {
+    const d = new Date(r[0]);
+    if (hours <= 48) return d.toLocaleTimeString('de-CH', {hour:'2-digit', minute:'2-digit'});
+    return d.toLocaleDateString('de-CH', {weekday:'short', hour:'2-digit', minute:'2-digit'});
+  });
+  const minData = rows.map(r => r[3]);
+  const avgData = rows.map(r => r[4]);
+  const maxData = rows.map(r => r[5]);
+
+  // draw threshold lines
+  const tAvgOn = $('t-avg-on').checked;
+  const tMaxOn = $('t-max-on').checked;
+  const tAvg   = +$('t-avg').value;
+  const tMax   = +$('t-max').value;
+
+  if (windChart) windChart.destroy();
+
+  windChart = new Chart($('wind-chart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Max',
+          data: maxData,
+          fill: '+1',
+          backgroundColor: 'rgba(56,189,248,0.15)',
+          borderColor: 'rgba(56,189,248,0.25)',
+          borderWidth: 1,
+          pointRadius: 0,
+          tension: 0.3,
+        },
+        {
+          label: 'Min',
+          data: minData,
+          fill: false,
+          borderColor: 'rgba(56,189,248,0.15)',
+          borderWidth: 1,
+          pointRadius: 0,
+          tension: 0.3,
+        },
+        {
+          label: 'Ø Wind',
+          data: avgData,
+          fill: false,
+          borderColor: '#38bdf8',
+          borderWidth: 2,
+          pointRadius: 0,
+          tension: 0.3,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1e293b',
+          borderColor: '#475569',
+          borderWidth: 1,
+          titleColor: '#94a3b8',
+          bodyColor: '#f1f5f9',
+          callbacks: {
+            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y?.toFixed(1)} km/h`,
+          },
+        },
+        annotation: buildAnnotations(tAvgOn, tAvg, tMaxOn, tMax),
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: '#475569',
+            maxTicksLimit: hours <= 48 ? 12 : 14,
+            maxRotation: 0,
+            font: { size: 10 },
+          },
+          grid: { color: '#1e293b' },
+        },
+        y: {
+          min: 0,
+          ticks: { color: '#475569', font: { size: 10 } },
+          grid: { color: '#334155' },
+        },
+      },
+    },
+  });
+}
+
+function buildAnnotations(tAvgOn, tAvg, tMaxOn, tMax) {
+  // requires chartjs-plugin-annotation – skip if not loaded, draw manually instead
+  return {};
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 loadConfig();
 if ('Notification' in window && Notification.permission === 'default' && $('n-notif').checked) {
   Notification.requestPermission();
 }
 restartPolling();
+loadChart(24);
 </script>
 </body>
 </html>
