@@ -271,6 +271,27 @@
       align-items: end;
     }
     @media (max-width: 600px) { .station-grid { grid-template-columns: 1fr; } }
+    /* ── Source label ── */
+    .src-label {
+      font-size: .78rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .src-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+    .src-dot.wu { background: #c084fc; }
+    .section-divider {
+      border: none;
+      border-top: 1px solid var(--surface2);
+      margin: 16px 0;
+    }
   </style>
 </head>
 <body>
@@ -352,6 +373,45 @@
         </g>
       </svg>
       <div style="font-size:.82rem; color:var(--muted); text-align:center" id="compass-lbl">– –</div>
+    </div>
+  </div>
+
+  <!-- Weather Underground card (hidden until configured) -->
+  <div class="card span2" id="wu-card" style="display:none">
+    <div class="card-title" style="display:flex; justify-content:space-between; align-items:center">
+      <span style="display:flex; align-items:center; gap:8px">
+        <span class="src-dot wu"></span>
+        Weather Underground · <span id="wu-name-lbl" style="color:var(--text)"></span>
+      </span>
+      <a id="wu-link" href="https://www.wunderground.com/wundermap" target="_blank" rel="noopener"
+         style="font-size:.7rem; color:#c084fc; text-decoration:none">🗺 wunderground.com</a>
+    </div>
+    <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px">
+      <div class="stat">
+        <div class="stat-lbl">Ø Wind</div>
+        <div class="stat-val" id="wu-avg">–</div>
+        <div style="font-size:.65rem; color:var(--muted); margin-top:2px">km/h</div>
+      </div>
+      <div class="stat">
+        <div class="stat-lbl">Böen</div>
+        <div class="stat-val" id="wu-gust" style="color:var(--orange)">–</div>
+        <div style="font-size:.65rem; color:var(--muted); margin-top:2px">km/h</div>
+      </div>
+      <div class="stat">
+        <div class="stat-lbl">Richtung</div>
+        <div class="stat-val" id="wu-dir">–</div>
+      </div>
+      <div class="stat">
+        <div class="stat-lbl">Temperatur</div>
+        <div class="stat-val" id="wu-temp">–</div>
+        <div style="font-size:.65rem; color:var(--muted); margin-top:2px">°C</div>
+      </div>
+    </div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px">
+      <span class="ts" id="wu-ts"></span>
+      <span id="wu-badge" class="badge badge-off" style="font-size:.65rem; padding:3px 8px">
+        <span class="dot"></span> –
+      </span>
     </div>
   </div>
 
@@ -466,7 +526,10 @@
 
   <!-- Station -->
   <div class="card span2">
-    <div class="card-title">Station</div>
+    <div class="card-title">Stationen</div>
+
+    <!-- OpenWindMap -->
+    <div class="src-label"><span class="src-dot"></span> OpenWindMap / Windbird</div>
     <div class="station-grid">
       <div class="field" style="margin:0">
         <label>Station ID</label>
@@ -476,7 +539,34 @@
         <label>Stationsname (optional)</label>
         <input type="text" id="station-name" placeholder="Wird automatisch geladen" onchange="saveConfig()">
       </div>
-      <button class="btn-primary" onclick="fetchNow()" style="white-space:nowrap">↺ Jetzt laden</button>
+      <button class="btn-primary" onclick="fetchNow()" style="white-space:nowrap">↺ Laden</button>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- Weather Underground -->
+    <div class="src-label"><span class="src-dot wu"></span> Weather Underground</div>
+    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr auto; gap:12px; align-items:end">
+      <div class="field" style="margin:0">
+        <label>Station ID</label>
+        <input type="text" id="wu-sid" placeholder="z.B. ILUZERN12" onchange="saveConfig(); toggleWU()">
+      </div>
+      <div class="field" style="margin:0">
+        <label>API Key</label>
+        <input type="text" id="wu-apikey" placeholder="Von wunderground.com" onchange="saveConfig(); toggleWU()">
+      </div>
+      <div class="field" style="margin:0">
+        <label>Stationsname (optional)</label>
+        <input type="text" id="wu-name" placeholder="Wird automatisch geladen" onchange="saveConfig()">
+      </div>
+      <button class="btn-secondary" onclick="fetchWUNow()" style="white-space:nowrap">↺ Laden</button>
+    </div>
+    <div class="infobox" style="margin-top:10px">
+      API Key kostenlos (1500 Calls/Tag) →
+      <a href="https://www.wunderground.com/member/api-keys" target="_blank" rel="noopener">wunderground.com/member/api-keys</a><br>
+      Station ID auf der Karte →
+      <a href="https://www.wunderground.com/wundermap" target="_blank" rel="noopener">wunderground.com/wundermap</a>
+      (Station anklicken, ID aus URL ablesen)
     </div>
   </div>
 
@@ -532,7 +622,11 @@ function loadConfig() {
     $('n-sound').checked    = c.nSound   ?? true;
     $('n-banner').checked   = c.nBanner  ?? true;
     $('n-notif').checked    = c.nNotif   ?? true;
+    $('wu-sid').value       = c.wuSid    ?? '';
+    $('wu-apikey').value    = c.wuKey    ?? '';
+    $('wu-name').value      = c.wuName   ?? '';
   } catch(e) {}
+  toggleWU();
 }
 
 function saveConfig() {
@@ -551,7 +645,16 @@ function saveConfig() {
     nSound:  $('n-sound').checked,
     nBanner: $('n-banner').checked,
     nNotif:  $('n-notif').checked,
+    wuSid:   $('wu-sid').value,
+    wuKey:   $('wu-apikey').value,
+    wuName:  $('wu-name').value,
   }));
+}
+
+// ── WU helpers ────────────────────────────────────────────────────────────────
+function toggleWU() {
+  const active = $('wu-sid').value.trim() && $('wu-apikey').value.trim();
+  $('wu-card').style.display = active ? '' : 'none';
 }
 
 // ── Wind data ─────────────────────────────────────────────────────────────────
@@ -596,6 +699,93 @@ function updateUI(data) {
   // station name placeholder
   if (!$('station-name').value && data.meta?.name) {
     $('station-name').placeholder = data.meta.name;
+  }
+}
+
+// ── Weather Underground ───────────────────────────────────────────────────────
+const WU_API = 'https://api.weather.com/v2/pws/observations/current';
+
+async function fetchWUData(sid, apiKey) {
+  const url = `${WU_API}?stationId=${encodeURIComponent(sid)}&format=json&units=m&numericPrecision=decimal&apiKey=${encodeURIComponent(apiKey)}`;
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`WU HTTP ${r.status}`);
+  return r.json();
+}
+
+function updateWUCard(obs) {
+  const m = obs.metric;
+  const sname = $('wu-name').value || obs.neighborhood || obs.stationID;
+  $('wu-name-lbl').textContent = sname;
+  $('wu-link').href = `https://www.wunderground.com/dashboard/pws/${obs.stationID}`;
+  $('wu-link').textContent = `🗺 ${obs.stationID}`;
+  $('wu-avg').textContent  = m.windSpeed  != null ? m.windSpeed.toFixed(1)  : '–';
+  $('wu-gust').textContent = m.windGust   != null ? m.windGust.toFixed(1)   : '–';
+  $('wu-temp').textContent = m.temp       != null ? m.temp.toFixed(1)       : '–';
+  $('wu-dir').textContent  = obs.winddir  != null ? dirLabel(obs.winddir)   : '–';
+
+  if (obs.obsTimeUtc) {
+    const d = new Date(obs.obsTimeUtc);
+    const age = Math.round((Date.now() - d) / 60000);
+    const ageStr = age < 2 ? 'gerade eben' : `vor ${age} Min`;
+    $('wu-ts').textContent = `📡 Sensor: ${d.toLocaleTimeString('de-CH',{hour:'2-digit',minute:'2-digit'})} (${ageStr})`;
+  }
+
+  const wb = $('wu-badge');
+  wb.className = 'badge badge-ok';
+  wb.innerHTML = '<span class="dot"></span> Live';
+
+  if (!$('wu-name').value && obs.neighborhood) {
+    $('wu-name').placeholder = obs.neighborhood;
+  }
+}
+
+function checkThresholdsWU(obs) {
+  const m = obs.metric;
+  const reasons = [];
+  const sname = $('wu-name').value || obs.neighborhood || obs.stationID;
+
+  if ($('t-avg-on').checked && m.windSpeed != null && m.windSpeed >= +$('t-avg').value)
+    reasons.push(`WU Ø ${m.windSpeed.toFixed(1)} km/h ≥ ${$('t-avg').value} km/h`);
+  if ($('t-max-on').checked && m.windGust  != null && m.windGust  >= +$('t-max').value)
+    reasons.push(`WU Böen ${m.windGust.toFixed(1)} km/h ≥ ${$('t-max').value} km/h`);
+
+  if (!reasons.length) return;
+
+  const now = Date.now();
+  const cdMs = +$('cooldown').value * 60000;
+  if (now - lastAlertAt < cdMs) {
+    const rem = Math.round((cdMs - (now - lastAlertAt)) / 60000);
+    addLog('info', `WU Threshold – Pause aktiv (noch ${rem} min)`);
+    return;
+  }
+  lastAlertAt = now;
+
+  const dir = obs.winddir;
+  const msg = `⚠️ Wind Alert (WU): ${sname}\n${reasons.join(', ')}\nRichtung: ${dir != null ? dirLabel(dir) + ' (' + dir + '°)' : '–'}\n${new Date().toLocaleString('de-CH')}`;
+  addLog('alert', `ALERT (WU): ${reasons.join(' | ')}`);
+  sendWhatsApp(msg);
+  if ($('n-notif').checked)  showBrowserNotif(sname, reasons.join(', '));
+  if ($('n-banner').checked) showBanner(reasons.join(' | '));
+  if ($('n-sound').checked)  playAlertSound();
+  if ($('n-dialog').checked) setTimeout(() => alert(`⚠️ Wind Alert WU: ${sname}\n\n${reasons.join('\n')}`), 100);
+}
+
+async function fetchWUNow() {
+  const sid    = $('wu-sid').value.trim();
+  const apiKey = $('wu-apikey').value.trim();
+  if (!sid || !apiKey) { addLog('warn', 'WU: Station ID und API Key benötigt'); return; }
+  try {
+    const json = await fetchWUData(sid, apiKey);
+    const obs = json.observations?.[0];
+    if (!obs) throw new Error('Keine Messung in Antwort');
+    updateWUCard(obs);
+    checkThresholdsWU(obs);
+    addLog('ok', `WU ${sid}: Ø ${obs.metric.windSpeed?.toFixed(1)} km/h, Böen ${obs.metric.windGust?.toFixed(1)} km/h`);
+  } catch(e) {
+    addLog('alert', `WU Fehler: ${e.message}`);
+    const wb = $('wu-badge');
+    wb.className = 'badge badge-err';
+    wb.innerHTML = '<span class="dot"></span> Fehler';
   }
 }
 
@@ -736,17 +926,36 @@ function clearLog() {
 // ── Polling ───────────────────────────────────────────────────────────────────
 async function fetchNow() {
   const sid = $('station-id').value.trim();
-  if (!sid) { addLog('warn', 'Keine Station-ID angegeben'); return; }
-  try {
-    const json = await fetchWindData(sid);
-    lastData = json.data;
-    updateUI(lastData);
-    checkThresholds(lastData);
-  } catch(e) {
-    addLog('alert', `Ladefehler: ${e.message}`);
-    $('badge').className = 'badge badge-err';
-    $('badge').innerHTML = '<span class="dot"></span> Fehler';
-  }
+  const wuSid = $('wu-sid').value.trim();
+  const wuKey = $('wu-apikey').value.trim();
+
+  // run both in parallel
+  const tasks = [];
+
+  if (sid) tasks.push(
+    fetchWindData(sid)
+      .then(json => { lastData = json.data; updateUI(lastData); checkThresholds(lastData); })
+      .catch(e => {
+        addLog('alert', `Windbird Fehler: ${e.message}`);
+        $('badge').className = 'badge badge-err';
+        $('badge').innerHTML = '<span class="dot"></span> Fehler';
+      })
+  );
+
+  if (wuSid && wuKey) tasks.push(
+    fetchWUData(wuSid, wuKey)
+      .then(json => {
+        const obs = json.observations?.[0];
+        if (obs) { updateWUCard(obs); checkThresholdsWU(obs); }
+      })
+      .catch(e => {
+        addLog('alert', `WU Fehler: ${e.message}`);
+        $('wu-badge').className = 'badge badge-err';
+        $('wu-badge').innerHTML = '<span class="dot"></span> Fehler';
+      })
+  );
+
+  await Promise.all(tasks);
 }
 
 function restartPolling() {
