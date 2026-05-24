@@ -250,8 +250,8 @@
     }
     .range-btn.active { background: rgba(56,189,248,.15); border-color: var(--accent); color: var(--accent); }
     .chart-wrap { position: relative; height: 160px; }
-    #station-map { height: 200px; border-radius: 8px; overflow: hidden; }
-    .leaflet-container { background: #1e293b; }
+    #station-map { height: 160px; border-radius: 8px; overflow: hidden; }
+    .leaflet-container { background: #e8e8e8; }
 
     /* ── Form controls ── */
     .field { margin-bottom: 12px; }
@@ -819,7 +819,7 @@ function updateMap(data) {
 
   if (!stationMap) {
     stationMap = L.map('station-map', { zoomControl: true }).setView([lat, lng], 13);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
       attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
       maxZoom: 19
     }).addTo(stationMap);
