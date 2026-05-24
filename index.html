@@ -6,6 +6,8 @@
   <title>Wind Alert</title>
   <link rel="icon" href="https://z9nai.ch/assets/logo_new-DwOlNuuy.png">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9/dist/leaflet.js"></script>
   <style>
     :root {
       --bg: #0f172a;
@@ -248,6 +250,9 @@
     }
     .range-btn.active { background: rgba(56,189,248,.15); border-color: var(--accent); color: var(--accent); }
     .chart-wrap { position: relative; height: 160px; }
+    #station-map { height: 220px; border-radius: 8px; overflow: hidden; }
+    .leaflet-container { background: #1e293b; }
+    #map-card { display: none; }
 
     /* ── Form controls ── */
     .field { margin-bottom: 12px; }
@@ -455,6 +460,13 @@
       <div class="ts" id="chart-status" style="margin-top:8px;text-align:center"></div>
     </div>
 
+    <!-- Map -->
+    <div class="card span2" id="map-card">
+      <div class="card-title" style="margin-bottom:10px">Standort</div>
+      <div id="station-map"></div>
+      <div class="ts" id="map-coords" style="margin-top:6px;text-align:center"></div>
+    </div>
+
     <!-- Thresholds -->
     <div class="card">
       <div class="card-title">Schwellenwerte</div>
@@ -657,7 +669,9 @@ let cdTimer   = null;
 let nextAt    = null;
 
 // Chart
-let windChart = null;
+let windChart    = null;
+let stationMap   = null;
+let stationMarker = null;
 
 // OWM station list cache
 let owmStations = null;
@@ -796,6 +810,32 @@ function loadStationPanel(s) {
   });
 }
 
+function updateMap(data) {
+  const loc = data?.location;
+  if (!loc || !loc.success || loc.latitude == null) {
+    $('map-card').style.display = 'none';
+    return;
+  }
+  const lat = loc.latitude;
+  const lng = loc.longitude;
+  $('map-card').style.display = '';
+  $('map-coords').textContent = `${lat.toFixed(5)}° N,  ${lng.toFixed(5)}° E`;
+
+  if (!stationMap) {
+    stationMap = L.map('station-map', { zoomControl: true }).setView([lat, lng], 13);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions">CARTO</a>',
+      maxZoom: 19
+    }).addTo(stationMap);
+    stationMarker = L.marker([lat, lng]).addTo(stationMap);
+  } else {
+    stationMap.setView([lat, lng], 13);
+    stationMarker.setLatLng([lat, lng]);
+  }
+  // Needed when card was hidden or layout changed
+  setTimeout(() => stationMap.invalidateSize(), 50);
+}
+
 function clearWindDisplay() {
   $('w-avg').textContent = '–';
   $('w-min').textContent = '–';
@@ -889,6 +929,7 @@ function updateUI(data) {
     $('w-ts').textContent = `📡 Sensor: ${d.toLocaleTimeString('de-CH',{hour:'2-digit',minute:'2-digit'})} (${age < 2 ? 'gerade eben' : `vor ${age} Min`})`;
   }
   $('w-fetched').textContent = `🔄 App-Abfrage: ${new Date().toLocaleTimeString('de-CH',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}`;
+  updateMap(data);
 }
 
 // ── Per-station fetch ──────────────────────────────────────────────────────────
