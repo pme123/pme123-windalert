@@ -938,11 +938,24 @@ function checkThresholds(idx, data) {
   const s = stations[idx];
   if (!s) return;
   const m       = data.measurements;
+  const sname   = s.name || data.meta?.name || `Station ${data.id || s.id}`;
   const reasons = [];
-  if (s.tAvgOn && m.wind_speed_avg != null && m.wind_speed_avg >= s.tAvg)
-    reasons.push(`Ø ${fmtWind(m.wind_speed_avg)} ${unitLabel()} ≥ ${fmtThresh(s.tAvg)} ${unitLabel()}`);
-  if (s.tMaxOn && m.wind_speed_max != null && m.wind_speed_max >= s.tMax)
-    reasons.push(`Böen ${fmtWind(m.wind_speed_max)} ${unitLabel()} ≥ ${fmtThresh(s.tMax)} ${unitLabel()}`);
+
+  // Log what we're seeing vs. thresholds so user can debug in the log panel
+  const avgKmh = m.wind_speed_avg;
+  const maxKmh = m.wind_speed_max;
+  const parts  = [];
+  if (s.tAvgOn) {
+    const hit = avgKmh != null && avgKmh >= s.tAvg;
+    parts.push(`Ø ${avgKmh != null ? fmtWind(avgKmh) : '–'}${hit ? ' ✓' : ` (Schwelle: ${fmtThresh(s.tAvg)})`} ${unitLabel()}`);
+    if (hit) reasons.push(`Ø ${fmtWind(avgKmh)} ${unitLabel()} ≥ ${fmtThresh(s.tAvg)} ${unitLabel()}`);
+  }
+  if (s.tMaxOn) {
+    const hit = maxKmh != null && maxKmh >= s.tMax;
+    parts.push(`Böen ${maxKmh != null ? fmtWind(maxKmh) : '–'}${hit ? ' ✓' : ` (Schwelle: ${fmtThresh(s.tMax)})`} ${unitLabel()}`);
+    if (hit) reasons.push(`Böen ${fmtWind(maxKmh)} ${unitLabel()} ≥ ${fmtThresh(s.tMax)} ${unitLabel()}`);
+  }
+  addLog('info', `[${sname}] ${parts.length ? parts.join(' | ') : 'keine Schwellen aktiv'}`);
 
   s.status = reasons.length ? 'warn' : 'ok';
 
@@ -958,15 +971,14 @@ function checkThresholds(idx, data) {
   const cdMs = +$('cooldown').value * 60000;
   if (now - s.lastAlertAt < cdMs) {
     const rem = Math.round((cdMs - (now - s.lastAlertAt)) / 60000);
-    addLog('info', `[${s.name || s.id}] Threshold – Pause aktiv (noch ${rem} min)`);
+    addLog('warn', `[${sname}] ⏱ Schwelle überschritten – Pause aktiv (noch ${rem} min)`);
     return;
   }
   s.lastAlertAt = now;
   saveConfig();   // persist cooldown timestamp so page reloads don't retrigger
 
-  const sname = s.name || data.meta?.name || `Station ${data.id}`;
-  const dir   = m.wind_heading;
-  const msg   = `⚠️ Wind Alert: ${sname}\n${reasons.join(', ')}\nRichtung: ${dir != null ? dirLabel(dir) + ' (' + Math.round(dir) + '°)' : '–'}\n${new Date().toLocaleString('de-CH')}`;
+  const dir = m.wind_heading;
+  const msg = `⚠️ Wind Alert: ${sname}\n${reasons.join(', ')}\nRichtung: ${dir != null ? dirLabel(dir) + ' (' + Math.round(dir) + '°)' : '–'}\n${new Date().toLocaleString('de-CH')}`;
 
   addLog('alert', `[${sname}] ALERT: ${reasons.join(' | ')}`);
   sendWhatsApp(msg);
@@ -1056,8 +1068,9 @@ async function sendWhatsApp(text) {
   const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(text)}&apikey=${encodeURIComponent(key)}`;
   try {
     // CallMeBot does not send CORS headers → must use no-cors (response is opaque)
+    addLog('info', `WhatsApp: Anfrage wird gesendet an +${phone}…`);
     await fetch(url, { mode: 'no-cors' });
-    addLog('ok', `WhatsApp gesendet an +${phone}`);
+    addLog('ok', `WhatsApp: Anfrage abgeschickt an +${phone} (Zustellung via CallMeBot, keine Bestätigung möglich)`);
   } catch(e) {
     addLog('alert', `WhatsApp Fehler: ${e.message}`);
   }
