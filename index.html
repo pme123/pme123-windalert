@@ -29,762 +29,639 @@
       max-width: 960px;
       margin: 0 auto;
     }
+
     /* ── Header ── */
     .header {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
       flex-wrap: wrap;
       gap: 12px;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
     h1 { font-size: 1.5rem; font-weight: 800; color: var(--accent); }
-    .subtitle { font-size: 0.8rem; color: var(--muted); margin-top: 3px; }
     .header-right { display: flex; align-items: center; gap: 12px; }
-    /* ── Status badge ── */
+    #countdown { font-size: .72rem; color: var(--muted); }
+
+    /* ── Badge ── */
     .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 5px 12px;
-      border-radius: 20px;
-      font-size: 0.75rem;
-      font-weight: 700;
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 12px; border-radius: 20px;
+      font-size: 0.75rem; font-weight: 700;
     }
     .badge-ok   { background: rgba(74,222,128,.15); color: var(--green); }
     .badge-warn { background: rgba(251,191,36,.15);  color: var(--yellow); }
     .badge-err  { background: rgba(248,113,113,.15); color: var(--red); }
     .badge-off  { background: rgba(148,163,184,.15); color: var(--muted); }
-    .dot {
-      width: 7px; height: 7px;
-      border-radius: 50%; background: currentColor;
-      animation: blink 2s infinite;
+    .dot { width:7px; height:7px; border-radius:50%; background:currentColor; animation:blink 2s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
     }
-    @keyframes blink { 0%,100% { opacity:1 } 50% { opacity:.3 } }
-    /* ── Grid ── */
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
+    .tab {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-bottom: none;
+      border-radius: 8px 8px 0 0;
+      padding: 8px 14px 9px;
+      font-size: .8rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-right: 4px;
+      margin-bottom: -1px;
+      transition: color .15s, background .15s;
+      white-space: nowrap;
+      max-width: 200px;
     }
-    @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
-    .span2 { grid-column: span 2; }
-    @media (max-width: 600px) { .span2 { grid-column: span 1; } }
-    /* ── Cards ── */
-    .card {
+    .tab:hover:not(.active) { color: var(--text); background: var(--surface); }
+    .tab.active {
+      background: var(--surface);
+      color: var(--text);
+      border-top: 2px solid var(--accent);
+    }
+    .tab-name { overflow: hidden; text-overflow: ellipsis; max-width: 130px; }
+    .tab-dot { width:7px; height:7px; border-radius:50%; background:var(--muted); flex-shrink:0; transition:background .3s; }
+    .tab-dot.ok   { background: var(--green); }
+    .tab-dot.warn { background: var(--yellow); animation: blink 1.5s infinite; }
+    .tab-dot.err  { background: var(--red); }
+    .tab-close {
+      font-size: .62rem; line-height: 1.4;
+      padding: 1px 4px; border-radius: 4px;
+      opacity: 0; flex-shrink: 0;
+      transition: opacity .15s, background .15s, color .15s;
+    }
+    .tab:hover .tab-close { opacity: 0.55; }
+    .tab-close:hover { opacity: 1 !important; background: rgba(248,113,113,.25); color: var(--red); }
+    .tab-add {
+      background: transparent;
+      border: 1px dashed var(--border);
+      border-bottom: none;
+      border-radius: 8px 8px 0 0;
+      padding: 8px 14px 9px;
+      font-size: .8rem; color: var(--muted);
+      cursor: pointer;
+      margin-bottom: -1px;
+      transition: border-color .15s, color .15s;
+    }
+    .tab-add:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Station panel ── */
+    .station-panel {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 14px;
+      border-top: none;
+      border-radius: 0 0 14px 14px;
       padding: 20px;
-    }
-    .card-title {
-      font-size: 0.7rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .1em;
-      color: var(--muted);
       margin-bottom: 16px;
     }
-    /* ── Wind display ── */
-    .wind-main {
-      display: flex;
-      align-items: baseline;
-      gap: 6px;
-    }
-    .wind-big {
-      font-size: 4.5rem;
-      font-weight: 900;
-      line-height: 1;
-      font-variant-numeric: tabular-nums;
-    }
-    .wind-unit { font-size: 1rem; color: var(--muted); }
-    .wind-stats {
+    .panel-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 8px;
-      margin-top: 14px;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
     }
-    .stat {
-      background: var(--surface2);
-      border-radius: 8px;
-      padding: 10px;
-      text-align: center;
+    @media (max-width: 600px) { .panel-grid { grid-template-columns: 1fr; } }
+    .span2 { grid-column: span 2; }
+    @media (max-width: 600px) { .span2 { grid-column: span 1; } }
+
+    /* ── Inner cards ── */
+    .card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
     }
+    .card-title {
+      font-size: 0.7rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .1em;
+      color: var(--muted); margin-bottom: 14px;
+    }
+    .card-alert { border-color: var(--red); box-shadow: 0 0 0 1px var(--red), 0 0 20px rgba(248,113,113,.15); }
+
+    /* ── Wind display ── */
+    .wind-main { display: flex; align-items: baseline; gap: 6px; }
+    .wind-big { font-size: 4.5rem; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
+    .wind-unit { font-size: 1rem; color: var(--muted); }
+    .wind-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 14px; }
+    .stat { background: var(--surface2); border-radius: 8px; padding: 10px; text-align: center; }
     .stat-lbl { font-size: .65rem; text-transform: uppercase; letter-spacing:.05em; color: var(--muted); }
     .stat-val { font-size: 1.3rem; font-weight: 700; margin-top: 2px; font-variant-numeric: tabular-nums; }
     .ts { font-size: .72rem; color: var(--muted); margin-top: 10px; }
-    .card-alert { border-color: var(--red); box-shadow: 0 0 0 1px var(--red), 0 0 20px rgba(248,113,113,.15); }
+
     /* ── Compass ── */
-    .compass-wrap {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      gap: 10px;
+    .compass-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 10px; min-height: 140px; }
+
+    /* ── Chart ── */
+    .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .range-btns { display: flex; gap: 6px; }
+    .range-btn {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 6px; padding: 4px 10px;
+      font-size: .72rem; font-weight: 600; color: var(--muted);
+      cursor: pointer; transition: all .15s;
     }
+    .range-btn.active { background: rgba(56,189,248,.15); border-color: var(--accent); color: var(--accent); }
+    .chart-wrap { position: relative; height: 160px; }
+
     /* ── Form controls ── */
     .field { margin-bottom: 12px; }
     .field:last-child { margin-bottom: 0; }
-    .field label {
-      display: block;
-      font-size: .78rem;
-      color: var(--muted);
-      margin-bottom: 4px;
-    }
+    .field label { display: block; font-size: .78rem; color: var(--muted); margin-bottom: 4px; }
     input[type=text], input[type=number], select {
-      width: 100%;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 8px 12px;
-      color: var(--text);
-      font-size: .875rem;
-      outline: none;
-      transition: border-color .15s;
+      width: 100%; background: var(--surface2);
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 8px 12px; color: var(--text); font-size: .875rem;
+      outline: none; transition: border-color .15s;
     }
     input:focus, select:focus { border-color: var(--accent); }
     .inline { display: flex; gap: 8px; align-items: center; }
     .inline input { flex: 1; }
     .suffix {
-      flex-shrink: 0;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 8px 12px;
-      font-size: .75rem;
-      color: var(--muted);
+      flex-shrink: 0; background: var(--surface2);
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 8px 12px; font-size: .75rem; color: var(--muted);
     }
+
     /* ── Toggle ── */
     .toggle { position: relative; width: 38px; height: 22px; flex-shrink: 0; }
     .toggle input { display: none; }
     .slider {
       position: absolute; inset: 0;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      cursor: pointer;
-      transition: background .2s;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 20px; cursor: pointer; transition: background .2s;
     }
     .slider::before {
-      content: '';
-      position: absolute;
-      width: 16px; height: 16px;
-      background: var(--muted);
-      border-radius: 50%;
-      top: 2px; left: 2px;
+      content: ''; position: absolute;
+      width: 16px; height: 16px; background: var(--muted);
+      border-radius: 50%; top: 2px; left: 2px;
       transition: transform .2s, background .2s;
     }
     .toggle input:checked + .slider { background: rgba(56,189,248,.2); border-color: var(--accent); }
     .toggle input:checked + .slider::before { transform: translateX(16px); background: var(--accent); }
+
     /* ── Threshold row ── */
-    .thresh-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
+    .thresh-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
     .thresh-row .lbl { flex: 1; font-size: .82rem; color: var(--text); }
     .thresh-row .inline { flex: 1.5; }
+
     /* ── Buttons ── */
-    button {
-      cursor: pointer;
-      border: none;
-      border-radius: 8px;
-      padding: 9px 16px;
-      font-size: .875rem;
-      font-weight: 600;
-      transition: opacity .15s, transform .1s;
-    }
+    button { cursor: pointer; border: none; border-radius: 8px; padding: 9px 16px; font-size: .875rem; font-weight: 600; transition: opacity .15s, transform .1s; }
     button:active { transform: scale(.97); }
     .btn-primary { background: var(--accent); color: #0f172a; }
     .btn-secondary { background: var(--surface2); color: var(--text); }
     .btn-block { width: 100%; }
+
+    /* ── Notif row ── */
+    .notif-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--surface2); font-size: .82rem; }
+    .notif-row:last-child { border-bottom: none; }
+
+    /* ── Bottom grid ── */
+    .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 600px) { .bottom-grid { grid-template-columns: 1fr; } }
+    .bottom-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+    .bottom-card .card-title { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-bottom: 14px; }
+
     /* ── Log ── */
-    .log {
-      max-height: 220px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-    .log-entry {
-      display: flex;
-      gap: 10px;
-      font-size: .74rem;
-      padding: 6px 10px;
-      background: var(--surface2);
-      border-radius: 6px;
-      border-left: 3px solid transparent;
-    }
+    .log { max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
+    .log-entry { display: flex; gap: 10px; font-size: .74rem; padding: 6px 10px; background: var(--surface2); border-radius: 6px; border-left: 3px solid transparent; }
     .log-t { color: var(--muted); flex-shrink: 0; font-variant-numeric: tabular-nums; }
     .log-entry.info  { border-color: var(--accent); }
     .log-entry.ok    { border-color: var(--green); }
     .log-entry.warn  { border-color: var(--yellow); }
     .log-entry.alert { border-color: var(--red); }
+
     /* ── Info box ── */
-    .infobox {
-      background: rgba(56,189,248,.07);
-      border: 1px solid rgba(56,189,248,.2);
-      border-radius: 8px;
-      padding: 12px;
-      font-size: .74rem;
-      color: var(--muted);
-      line-height: 1.7;
-      margin-top: 10px;
-    }
+    .infobox { background: rgba(56,189,248,.07); border: 1px solid rgba(56,189,248,.2); border-radius: 8px; padding: 12px; font-size: .74rem; color: var(--muted); line-height: 1.7; margin-top: 10px; }
     .infobox a { color: var(--accent); }
     .infobox strong { color: var(--text); }
-    /* ── Countdown ── */
-    #countdown { font-size: .72rem; color: var(--muted); }
+
     /* ── Alert banner ── */
     #alert-banner {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      background: var(--red);
-      color: #fff;
-      padding: 14px 20px;
-      font-weight: 700;
-      font-size: 1rem;
-      z-index: 999;
-      text-align: center;
-      cursor: pointer;
+      display: none; position: fixed; top: 0; left: 0; right: 0;
+      background: var(--red); color: #fff; padding: 14px 20px;
+      font-weight: 700; font-size: 1rem; z-index: 999;
+      text-align: center; cursor: pointer;
       animation: slidein .3s ease;
     }
     #alert-banner.visible { display: block; }
-    @keyframes slidein { from { transform: translateY(-100%) } to { transform: translateY(0) } }
-    /* ── Notification toggles ── */
-    .notif-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 6px 0;
-      border-bottom: 1px solid var(--surface2);
-      font-size: .82rem;
-    }
-    .notif-row:last-child { border-bottom: none; }
-    /* ── Station grid ── */
-    .station-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr auto;
-      gap: 12px;
-      align-items: end;
-    }
-    @media (max-width: 600px) { .station-grid { grid-template-columns: 1fr; } }
-    /* ── Chart ── */
-    .chart-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-    .range-btns { display: flex; gap: 6px; }
-    .range-btn {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 4px 10px;
-      font-size: .72rem;
-      font-weight: 600;
-      color: var(--muted);
-      cursor: pointer;
-      transition: all .15s;
-    }
-    .range-btn.active {
-      background: rgba(56,189,248,.15);
-      border-color: var(--accent);
-      color: var(--accent);
-    }
-    .chart-wrap { position: relative; height: 160px; }
-    /* ── Search Dropdown ── */
+    @keyframes slidein { from{transform:translateY(-100%)} to{transform:translateY(0)} }
+
+    /* ── Search dropdown ── */
     .search-wrap { position: relative; }
     .search-row { display: flex; gap: 6px; }
     .search-row input { flex: 1; cursor: pointer; }
-    .search-btn {
-      flex-shrink: 0;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 0 12px;
-      color: var(--muted);
-      cursor: pointer;
-      font-size: .9rem;
-      transition: border-color .15s, color .15s;
-    }
+    .search-btn { flex-shrink: 0; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 0 12px; color: var(--muted); cursor: pointer; font-size: .9rem; transition: border-color .15s, color .15s; }
     .search-btn:hover { border-color: var(--accent); color: var(--accent); }
-    .dropdown {
-      position: absolute;
-      top: calc(100% + 4px);
-      left: 0; right: 0;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      z-index: 200;
-      box-shadow: 0 8px 32px rgba(0,0,0,.5);
-      overflow: hidden;
-      display: none;
-      min-width: 320px;
-    }
+    .dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; z-index: 200; box-shadow: 0 8px 32px rgba(0,0,0,.5); overflow: hidden; display: none; min-width: 320px; }
     .dropdown.open { display: block; }
-    .dd-search {
-      padding: 10px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-    .dd-search input {
-      flex: 1;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 7px 10px;
-      color: var(--text);
-      font-size: .85rem;
-      outline: none;
-    }
+    .dd-search { padding: 10px; border-bottom: 1px solid var(--border); }
+    .dd-search input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; color: var(--text); font-size: .85rem; outline: none; }
     .dd-search input:focus { border-color: var(--accent); }
     .dd-list { max-height: 300px; overflow-y: auto; }
-    .dd-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 14px;
-      cursor: pointer;
-      border-bottom: 1px solid var(--surface2);
-      transition: background .1s;
-      gap: 12px;
-    }
+    .dd-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--surface2); transition: background .1s; gap: 12px; }
     .dd-item:last-child { border-bottom: none; }
     .dd-item:hover { background: var(--surface2); }
     .dd-name { font-size: .875rem; font-weight: 600; }
     .dd-sub  { font-size: .7rem; color: var(--muted); margin-top: 2px; }
     .dd-wind { font-size: .85rem; font-weight: 700; color: var(--accent); flex-shrink: 0; text-align: right; }
     .dd-empty { padding: 20px; text-align: center; color: var(--muted); font-size: .82rem; }
-    /* ── Source label ── */
-    .src-label {
-      font-size: .78rem;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .src-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: var(--accent);
-    }
-    .src-dot.wu { background: #c084fc; }
-    .section-divider {
-      border: none;
-      border-top: 1px solid var(--surface2);
-      margin: 16px 0;
-    }
   </style>
 </head>
 <body>
 
+<!-- Alert Banner -->
+<div id="alert-banner" onclick="dismissBanner()">
+  ⚠️ <span id="banner-text">Wind Alert!</span> &nbsp;·&nbsp; <small>klicken zum Schliessen</small>
+</div>
+
 <!-- Header -->
 <div class="header">
-  <div>
-    <h1>Wind Alert</h1>
-    <div class="subtitle" id="subtitle">Initialisiere...</div>
-    <div style="margin-top:4px">
-      <a id="owm-link" href="https://www.openwindmap.org/windbird-2172" target="_blank" rel="noopener"
-         style="font-size:.75rem; color:var(--accent); text-decoration:none;">
-        🗺 openwindmap.org/windbird-2172
-      </a>
-    </div>
-  </div>
+  <h1>Wind Alert</h1>
   <div class="header-right">
     <span id="countdown"></span>
     <span id="badge" class="badge badge-off"><span class="dot"></span> Offline</span>
   </div>
 </div>
 
-<!-- Alert Banner (fixed top) -->
-<div id="alert-banner" onclick="dismissBanner()">
-  ⚠️ <span id="banner-text">Wind Alert!</span> &nbsp;·&nbsp; <small>klicken zum Schliessen</small>
-</div>
+<!-- Tab bar -->
+<div class="tabs" id="tab-bar"></div>
 
-<!-- Grid -->
-<div class="grid">
+<!-- Station panel (single DOM, swapped on tab switch) -->
+<div class="station-panel">
+  <div class="panel-grid">
 
-  <!-- Current Wind -->
-  <div class="card" id="wind-card">
-    <div class="card-title">Aktuell</div>
-    <div class="wind-main">
-      <span class="wind-big" id="w-avg">–</span>
-      <span class="wind-unit">km/h</span>
-    </div>
-    <div class="wind-stats">
-      <div class="stat">
-        <div class="stat-lbl">Min</div>
-        <div class="stat-val" id="w-min">–</div>
+    <!-- Wind -->
+    <div class="card" id="wind-card">
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span>Aktuell</span>
+        <a id="owm-link" href="#" target="_blank" rel="noopener" style="font-size:.72rem;color:var(--accent);text-decoration:none;font-weight:400">🗺 openwindmap.org</a>
       </div>
-      <div class="stat">
-        <div class="stat-lbl">Böen</div>
-        <div class="stat-val" id="w-max" style="color:var(--orange)">–</div>
+      <div class="wind-main">
+        <span class="wind-big" id="w-avg">–</span>
+        <span class="wind-unit">km/h</span>
       </div>
-      <div class="stat">
-        <div class="stat-lbl">Richtung</div>
-        <div class="stat-val" id="w-dir">–</div>
+      <div class="wind-stats">
+        <div class="stat"><div class="stat-lbl">Min</div><div class="stat-val" id="w-min">–</div></div>
+        <div class="stat"><div class="stat-lbl">Böen</div><div class="stat-val" id="w-max" style="color:var(--orange)">–</div></div>
+        <div class="stat"><div class="stat-lbl">Richtung</div><div class="stat-val" id="w-dir">–</div></div>
       </div>
+      <div class="ts" id="w-ts">Noch keine Daten</div>
+      <div class="ts" id="w-fetched" style="margin-top:2px"></div>
     </div>
-    <div class="ts" id="w-ts">Noch keine Daten</div>
-    <div class="ts" id="w-fetched" style="margin-top:2px"></div>
-  </div>
 
-  <!-- Compass -->
-  <div class="card" id="compass-card">
-    <div class="card-title">Windrichtung</div>
-    <div class="compass-wrap">
-      <svg id="compass" viewBox="0 0 100 100" width="130" height="130">
-        <circle cx="50" cy="50" r="46" fill="none" stroke="#334155" stroke-width="1.5"/>
-        <!-- Tick marks -->
-        <g stroke="#475569" stroke-width="1">
-          <line x1="50" y1="6"  x2="50" y2="12"/>
-          <line x1="50" y1="88" x2="50" y2="94"/>
-          <line x1="6"  y1="50" x2="12" y2="50"/>
-          <line x1="88" y1="50" x2="94" y2="50"/>
-        </g>
-        <!-- Cardinal labels -->
-        <text x="50" y="5"  text-anchor="middle" dominant-baseline="hanging" fill="#94a3b8" font-size="8" font-weight="700" font-family="sans-serif">N</text>
-        <text x="50" y="95" text-anchor="middle" dominant-baseline="auto"    fill="#94a3b8" font-size="8" font-weight="700" font-family="sans-serif">S</text>
-        <text x="96" y="50" text-anchor="middle" dominant-baseline="middle"  fill="#94a3b8" font-size="8" font-weight="700" font-family="sans-serif">O</text>
-        <text x="4"  y="50" text-anchor="middle" dominant-baseline="middle"  fill="#94a3b8" font-size="8" font-weight="700" font-family="sans-serif">W</text>
-        <!-- Needle: points toward wind origin -->
-        <g id="needle" transform="rotate(0,50,50)">
-          <polygon points="50,14 46,50 54,50" fill="#f87171"/>
-          <polygon points="50,86 46,50 54,50" fill="#475569"/>
-          <circle cx="50" cy="50" r="4" fill="#1e293b" stroke="#475569" stroke-width="1.5"/>
-        </g>
-      </svg>
-      <div style="font-size:.82rem; color:var(--muted); text-align:center" id="compass-lbl">– –</div>
-    </div>
-  </div>
-
-  <!-- History Chart -->
-  <div class="card span2" id="chart-card">
-    <div class="chart-header">
-      <div class="card-title" style="margin:0">Verlauf</div>
-      <div class="range-btns">
-        <button class="range-btn active" onclick="loadChart(24,this)">24h</button>
-        <button class="range-btn" onclick="loadChart(48,this)">48h</button>
-        <button class="range-btn" onclick="loadChart(168,this)">7d</button>
-      </div>
-    </div>
-    <div class="chart-wrap">
-      <canvas id="wind-chart"></canvas>
-    </div>
-    <div class="ts" id="chart-status" style="margin-top:8px; text-align:center"></div>
-  </div>
-
-  <!-- Thresholds -->
-  <div class="card">
-    <div class="card-title">Schwellenwerte</div>
-
-    <div class="thresh-row">
-      <span class="lbl">Ø Windstärke</span>
-      <label class="toggle">
-        <input type="checkbox" id="t-avg-on" onchange="saveConfig()">
-        <span class="slider"></span>
-      </label>
-      <div class="inline">
-        <input type="number" id="t-avg" value="20" min="0" max="300" onchange="saveConfig()">
-        <span class="suffix">km/h</span>
+    <!-- Compass -->
+    <div class="card" id="compass-card">
+      <div class="card-title">Windrichtung</div>
+      <div class="compass-wrap">
+        <svg viewBox="0 0 100 100" width="120" height="120">
+          <circle cx="50" cy="50" r="46" fill="none" stroke="#334155" stroke-width="1.5"/>
+          <g stroke="#475569" stroke-width="1">
+            <line x1="50" y1="6"  x2="50" y2="12"/>
+            <line x1="50" y1="88" x2="50" y2="94"/>
+            <line x1="6"  y1="50" x2="12" y2="50"/>
+            <line x1="88" y1="50" x2="94" y2="50"/>
+          </g>
+          <text x="50" y="5"  text-anchor="middle" dominant-baseline="hanging" fill="#94a3b8" font-size="8" font-weight="700" font-family="sans-serif">N</text>
+          <text x="50" y="95" text-anchor="middle" dominant-baseline="auto"    fill="#94a3b8" font-size="8" font-weight="700" font-family="sans-serif">S</text>
+          <text x="96" y="50" text-anchor="middle" dominant-baseline="middle"  fill="#94a3b8" font-size="8" font-weight="700" font-family="sans-serif">O</text>
+          <text x="4"  y="50" text-anchor="middle" dominant-baseline="middle"  fill="#94a3b8" font-size="8" font-weight="700" font-family="sans-serif">W</text>
+          <g id="needle" transform="rotate(0,50,50)">
+            <polygon points="50,14 46,50 54,50" fill="#f87171"/>
+            <polygon points="50,86 46,50 54,50" fill="#475569"/>
+            <circle cx="50" cy="50" r="4" fill="#1e293b" stroke="#475569" stroke-width="1.5"/>
+          </g>
+        </svg>
+        <div style="font-size:.82rem;color:var(--muted);text-align:center" id="compass-lbl">– –</div>
       </div>
     </div>
 
-    <div class="thresh-row">
-      <span class="lbl">Max Böen</span>
-      <label class="toggle">
-        <input type="checkbox" id="t-max-on" checked onchange="saveConfig()">
-        <span class="slider"></span>
-      </label>
-      <div class="inline">
-        <input type="number" id="t-max" value="40" min="0" max="300" onchange="saveConfig()">
-        <span class="suffix">km/h</span>
+    <!-- History chart -->
+    <div class="card span2" id="chart-card">
+      <div class="chart-header">
+        <div class="card-title" style="margin:0">Verlauf</div>
+        <div class="range-btns">
+          <button class="range-btn active" onclick="loadChart(24,this)">24h</button>
+          <button class="range-btn" onclick="loadChart(48,this)">48h</button>
+          <button class="range-btn" onclick="loadChart(168,this)">7d</button>
+        </div>
       </div>
+      <div class="chart-wrap"><canvas id="wind-chart"></canvas></div>
+      <div class="ts" id="chart-status" style="margin-top:8px;text-align:center"></div>
     </div>
 
-    <div class="field" style="margin-top:16px">
-      <label style="margin-bottom:8px">Benachrichtigungen</label>
-      <div class="notif-row">
-        <span>Browser-Dialog (alert)</span>
-        <label class="toggle">
-          <input type="checkbox" id="n-dialog" onchange="saveConfig()">
-          <span class="slider"></span>
-        </label>
+    <!-- Thresholds -->
+    <div class="card">
+      <div class="card-title">Schwellenwerte</div>
+      <div class="thresh-row">
+        <span class="lbl">Ø Windstärke</span>
+        <label class="toggle"><input type="checkbox" id="t-avg-on" onchange="saveCurrentStation()"><span class="slider"></span></label>
+        <div class="inline"><input type="number" id="t-avg" value="20" min="0" max="300" onchange="saveCurrentStation()"><span class="suffix">km/h</span></div>
       </div>
-      <div class="notif-row">
-        <span>Ton-Alarm</span>
-        <label class="toggle">
-          <input type="checkbox" id="n-sound" checked onchange="saveConfig()">
-          <span class="slider"></span>
-        </label>
+      <div class="thresh-row">
+        <span class="lbl">Max Böen</span>
+        <label class="toggle"><input type="checkbox" id="t-max-on" checked onchange="saveCurrentStation()"><span class="slider"></span></label>
+        <div class="inline"><input type="number" id="t-max" value="40" min="0" max="300" onchange="saveCurrentStation()"><span class="suffix">km/h</span></div>
       </div>
-      <div class="notif-row">
-        <span>Banner (oben)</span>
-        <label class="toggle">
-          <input type="checkbox" id="n-banner" checked onchange="saveConfig()">
-          <span class="slider"></span>
-        </label>
+      <div class="field" style="margin-top:16px">
+        <label style="margin-bottom:8px">Benachrichtigungen</label>
+        <div class="notif-row"><span>Browser-Dialog</span><label class="toggle"><input type="checkbox" id="n-dialog" onchange="saveGlobal()"><span class="slider"></span></label></div>
+        <div class="notif-row"><span>Ton-Alarm</span><label class="toggle"><input type="checkbox" id="n-sound" checked onchange="saveGlobal()"><span class="slider"></span></label></div>
+        <div class="notif-row"><span>Banner (oben)</span><label class="toggle"><input type="checkbox" id="n-banner" checked onchange="saveGlobal()"><span class="slider"></span></label></div>
+        <div class="notif-row"><span>Browser-Notification</span><label class="toggle"><input type="checkbox" id="n-notif" checked onchange="saveGlobal(); maybeRequestNotif()"><span class="slider"></span></label></div>
       </div>
-      <div class="notif-row">
-        <span>Browser-Notification</span>
-        <label class="toggle">
-          <input type="checkbox" id="n-notif" checked onchange="saveConfig(); maybeRequestNotif()">
-          <span class="slider"></span>
-        </label>
+      <div class="field"><label>Alert-Pause (Minuten)</label><input type="number" id="cooldown" value="30" min="1" max="1440" onchange="saveGlobal()"></div>
+      <div class="field"><label>Abfrageintervall</label>
+        <select id="interval" onchange="saveGlobal(); restartPolling()">
+          <option value="60000">1 Minute</option>
+          <option value="180000">3 Minuten</option>
+          <option value="300000" selected>5 Minuten</option>
+          <option value="600000">10 Minuten</option>
+          <option value="900000">15 Minuten</option>
+        </select>
       </div>
+      <button class="btn-secondary btn-block" onclick="testAllAlerts()" style="margin-top:4px">Alle testen</button>
     </div>
 
-    <div class="field">
-      <label>Alert-Pause nach Auslösung (Minuten)</label>
-      <input type="number" id="cooldown" value="30" min="1" max="1440" onchange="saveConfig()">
-    </div>
-
-    <div class="field">
-      <label>Abfrageintervall</label>
-      <select id="interval" onchange="saveConfig(); restartPolling()">
-        <option value="60000">1 Minute</option>
-        <option value="180000">3 Minuten</option>
-        <option value="300000" selected>5 Minuten</option>
-        <option value="600000">10 Minuten</option>
-        <option value="900000">15 Minuten</option>
-      </select>
-    </div>
-  </div>
-
-  <!-- WhatsApp -->
-  <div class="card">
-    <div class="card-title">WhatsApp Alert</div>
-
-    <div class="field">
-      <label>Telefonnummer (mit Ländervorwahl, ohne +)</label>
-      <input type="text" id="wa-phone" placeholder="41791234567" onchange="saveConfig()">
-    </div>
-
-    <div class="field">
-      <label>CallMeBot API Key</label>
-      <input type="text" id="wa-key" placeholder="Wird per WhatsApp zugestellt" onchange="saveConfig()">
-    </div>
-
-    <div class="infobox">
-      <strong>Einrichtung (einmalig):</strong><br>
-      1. Nummer <strong>+34 644 97 79 48</strong> als „CallMeBot" speichern<br>
-      2. WhatsApp-Nachricht senden:<br>
-      <em>I allow callmebot to send me messages</em><br>
-      3. API Key per WhatsApp empfangen &amp; hier eintragen<br>
-      <br>
-      <strong>WhatsApp-Gruppe:</strong> Bot zur Gruppe hinzufügen, dann:<br>
-      <em>I allow callmebot to send messages to the group</em><br>
-      <a href="https://www.callmebot.com/blog/free-api-whatsapp-messages/" target="_blank" rel="noopener">→ callmebot.com Anleitung</a>
-    </div>
-
-    <div style="display:flex; gap:8px; margin-top:12px;">
-      <button class="btn-secondary btn-block" onclick="testAllAlerts()">Alle testen</button>
-      <button class="btn-secondary btn-block" onclick="testWhatsApp()">WhatsApp testen</button>
-    </div>
-  </div>
-
-  <!-- Station -->
-  <div class="card span2">
-    <div class="card-title">Station</div>
-    <div style="display:grid; grid-template-columns: 2fr 1fr auto; gap:12px; align-items:end">
-      <div class="field" style="margin:0">
+    <!-- Station selector -->
+    <div class="card">
+      <div class="card-title">Station</div>
+      <div class="field">
         <label>Station suchen</label>
         <div class="search-wrap">
           <div class="search-row">
-            <input type="text" id="owm-display" placeholder="Name oder ID tippen…" onclick="openOWMDropdown()" oninput="openOWMDropdown(); filterOWM(this.value)" autocomplete="off">
+            <input type="text" id="owm-display" placeholder="Name oder ID tippen…"
+              onclick="openOWMDropdown()" oninput="openOWMDropdown(); filterOWM(this.value)" autocomplete="off">
             <button class="search-btn" onclick="openOWMDropdown()" title="Alle Stationen">🔍</button>
           </div>
-          <input type="hidden" id="station-id" value="2172">
           <div class="dropdown" id="owm-dropdown">
             <div class="dd-search">
-              <input type="text" id="owm-filter" placeholder="Name, ID oder Koordinaten…" oninput="filterOWM(this.value)" onkeydown="if(event.key==='Escape')closeAllDropdowns()">
+              <input type="text" id="owm-filter" placeholder="Name, ID oder Koordinaten…"
+                oninput="filterOWM(this.value)" onkeydown="if(event.key==='Escape')closeAllDropdowns()">
             </div>
-            <div class="dd-list" id="owm-list">
-              <div class="dd-empty">Wird geladen…</div>
-            </div>
+            <div class="dd-list" id="owm-list"><div class="dd-empty">Wird geladen…</div></div>
           </div>
         </div>
       </div>
-      <div class="field" style="margin:0">
-        <label>Stationsname (optional)</label>
-        <input type="text" id="station-name" placeholder="Automatisch" onchange="saveConfig()">
+      <div class="field">
+        <label>Tab-Name (optional)</label>
+        <input type="text" id="station-name" placeholder="Automatisch"
+          onchange="saveCurrentStation(); renderTabs()">
       </div>
-      <button class="btn-primary" onclick="fetchNow()" style="white-space:nowrap">↺ Laden</button>
+      <button class="btn-primary btn-block" onclick="fetchNow()" style="margin-top:4px">↺ Jetzt laden</button>
     </div>
 
+  </div>
+</div>
+
+<!-- Bottom panels -->
+<div class="bottom-grid">
+
+  <!-- WhatsApp -->
+  <div class="bottom-card">
+    <div class="card-title">WhatsApp Alert</div>
+    <div class="field">
+      <label>Telefonnummer (mit Ländervorwahl, ohne +)</label>
+      <input type="text" id="wa-phone" placeholder="41791234567" onchange="saveGlobal()">
+    </div>
+    <div class="field">
+      <label>CallMeBot API Key</label>
+      <input type="text" id="wa-key" placeholder="Wird per WhatsApp zugestellt" onchange="saveGlobal()">
+    </div>
+    <div class="infobox">
+      <strong>Einrichtung (einmalig):</strong><br>
+      1. Nummer <strong>+34 644 97 79 48</strong> als „CallMeBot" speichern<br>
+      2. Nachricht senden: <em>I allow callmebot to send me messages</em><br>
+      3. API Key empfangen &amp; oben eintragen<br>
+      <a href="https://www.callmebot.com/blog/free-api-whatsapp-messages/" target="_blank" rel="noopener">→ callmebot.com Anleitung</a>
+    </div>
+    <button class="btn-secondary btn-block" onclick="testWhatsApp()" style="margin-top:12px">WhatsApp testen</button>
   </div>
 
   <!-- Log -->
-  <div class="card span2">
-    <div class="card-title" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
+  <div class="bottom-card">
+    <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
       <span>Protokoll</span>
-      <button class="btn-secondary" style="padding:3px 10px; font-size:.7rem" onclick="clearLog()">Löschen</button>
+      <button class="btn-secondary" style="padding:3px 10px;font-size:.7rem" onclick="clearLog()">Löschen</button>
     </div>
     <div class="log" id="log">
-      <div class="log-entry info">
-        <span class="log-t">–</span>
-        <span>Bereit. Konfiguriere Schwellenwerte und starte die Überwachung.</span>
-      </div>
+      <div class="log-entry info"><span class="log-t">–</span><span>Bereit.</span></div>
     </div>
   </div>
 
-</div><!-- /grid -->
+</div>
 
 <script>
-// ── Constants ─────────────────────────────────────────────────────────────────
-const API = 'https://api.pioupiou.fr/v1/live/';
-const DIRS = ['N','NNO','NO','ONO','O','OSO','SO','SSO','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+// ── Constants ──────────────────────────────────────────────────────────────────
+const API     = 'https://api.pioupiou.fr/v1/live/';
+const ARCHIVE = 'https://api.pioupiou.fr/v1/archive/';
+const DIRS    = ['N','NNO','NO','ONO','O','OSO','SO','SSO','S','SSW','SW','WSW','W','WNW','NW','NNW'];
 
-// ── State ─────────────────────────────────────────────────────────────────────
-let pollTimer = null;
-let cdTimer = null;
-let nextAt = null;
-let lastAlertAt = 0;
-let lastData = null;
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Helpers ────────────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
 const fmt1 = v => v != null ? v.toFixed(1) : '–';
-const ts = () => new Date().toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' });
+const ts   = () => new Date().toLocaleTimeString('de-CH', {hour:'2-digit', minute:'2-digit'});
 const dirLabel = deg => DIRS[Math.round(deg / 22.5) % 16];
 
-// ── Config persistence ────────────────────────────────────────────────────────
+// ── Multi-station state ────────────────────────────────────────────────────────
+let stations  = [];   // array of station objects
+let activeIdx = 0;
+
+// Shared polling
+let pollTimer = null;
+let cdTimer   = null;
+let nextAt    = null;
+
+// Chart
+let windChart = null;
+
+// OWM station list cache
+let owmStations = null;
+let owmFiltered = [];
+
+// ── Station factory ────────────────────────────────────────────────────────────
+function makeStation(id = '', name = '') {
+  return {
+    id, name,
+    tAvg: 20, tAvgOn: false,
+    tMax: 40, tMaxOn: true,
+    lastData: null, lastAlertAt: 0,
+    chartRows: null, chartHours: 24,
+    status: 'off',
+  };
+}
+
+// ── Persistence ────────────────────────────────────────────────────────────────
 function loadConfig() {
   try {
-    const c = JSON.parse(localStorage.getItem('waCfg') || '{}');
-    $('station-id').value   = c.sid    ?? '2172';
-    $('station-name').value = c.sname  ?? '';
-    $('t-avg').value        = c.tAvg   ?? 20;
-    $('t-avg-on').checked   = c.tAvgOn ?? false;
-    $('t-max').value        = c.tMax   ?? 40;
-    $('t-max-on').checked   = c.tMaxOn ?? true;
-    $('cooldown').value     = c.cd     ?? 30;
-    $('interval').value     = c.iv       ?? 300000;
-    $('wa-phone').value     = c.phone    ?? '';
-    $('wa-key').value       = c.key      ?? '';
-    $('n-dialog').checked   = c.nDialog  ?? false;
-    $('n-sound').checked    = c.nSound   ?? true;
-    $('n-banner').checked   = c.nBanner  ?? true;
-    $('n-notif').checked    = c.nNotif   ?? true;
-    // restore display label
-    const owmId = c.sid ?? '2172';
-    $('station-id').value  = owmId;
-    $('owm-display').value = c.owmLabel ?? (owmId ? `Station ${owmId}` : '');
-  } catch(e) {}
+    const c = JSON.parse(localStorage.getItem('waCfg2') || '{}');
+    stations = (c.stations && c.stations.length)
+      ? c.stations.map(s => ({ ...makeStation(), ...s, lastData: null, lastAlertAt: 0, chartRows: null }))
+      : [makeStation('2172', 'Schiberenegg')];
+    activeIdx = Math.min(+(c.activeIdx ?? 0), stations.length - 1);
+    $('wa-phone').value   = c.phone   ?? '';
+    $('wa-key').value     = c.key     ?? '';
+    $('n-dialog').checked = c.nDialog ?? false;
+    $('n-sound').checked  = c.nSound  ?? true;
+    $('n-banner').checked = c.nBanner ?? true;
+    $('n-notif').checked  = c.nNotif  ?? true;
+    $('cooldown').value   = c.cd      ?? 30;
+    $('interval').value   = c.iv      ?? 300000;
+  } catch(e) { stations = [makeStation('2172', 'Schiberenegg')]; }
 }
 
 function saveConfig() {
-  localStorage.setItem('waCfg', JSON.stringify({
-    sid:    $('station-id').value,
-    sname:  $('station-name').value,
-    tAvg:   +$('t-avg').value,
-    tAvgOn: $('t-avg-on').checked,
-    tMax:   +$('t-max').value,
-    tMaxOn: $('t-max-on').checked,
-    cd:     +$('cooldown').value,
-    iv:     +$('interval').value,
+  localStorage.setItem('waCfg2', JSON.stringify({
+    stations: stations.map(({id, name, tAvg, tAvgOn, tMax, tMaxOn}) => ({id, name, tAvg, tAvgOn, tMax, tMaxOn})),
+    activeIdx,
     phone:   $('wa-phone').value,
     key:     $('wa-key').value,
     nDialog: $('n-dialog').checked,
     nSound:  $('n-sound').checked,
     nBanner: $('n-banner').checked,
     nNotif:  $('n-notif').checked,
-    owmLabel: $('owm-display').value,
+    cd:      +$('cooldown').value,
+    iv:      +$('interval').value,
   }));
 }
 
-// ── Dropdown utils ────────────────────────────────────────────────────────────
-function closeAllDropdowns() {
-  document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('open'));
+function saveGlobal() { saveConfig(); }
+
+function saveCurrentStation() {
+  const s = stations[activeIdx];
+  if (!s) return;
+  s.name   = $('station-name').value.trim();
+  s.tAvg   = +$('t-avg').value;
+  s.tAvgOn = $('t-avg-on').checked;
+  s.tMax   = +$('t-max').value;
+  s.tMaxOn = $('t-max-on').checked;
+  saveConfig();
 }
-document.addEventListener('click', e => {
-  if (!e.target.closest('.search-wrap')) closeAllDropdowns();
-});
 
-// ── OWM Station Search ────────────────────────────────────────────────────────
-let owmStations = null;
-let owmFiltered = [];
+// ── Tab rendering ──────────────────────────────────────────────────────────────
+function renderTabs() {
+  const bar = $('tab-bar');
+  bar.innerHTML = stations.map((s, i) => {
+    const label  = s.name || (s.id ? `Station ${s.id}` : 'Neu');
+    const active = i === activeIdx ? ' active' : '';
+    const close  = stations.length > 1
+      ? `<span class="tab-close" onclick="event.stopPropagation(); removeStation(${i})" title="Entfernen">✕</span>`
+      : '';
+    return `<button class="tab${active}" onclick="switchTab(${i})">
+      <span class="tab-dot ${s.status}"></span>
+      <span class="tab-name">${label}</span>
+      ${close}
+    </button>`;
+  }).join('') +
+  `<button class="tab-add" onclick="addStation()">＋ Station</button>`;
+}
 
-async function loadOWMStations() {
-  if (owmStations) return;
-  $('owm-list').innerHTML = '<div class="dd-empty">Lade ~500 Stationen…</div>';
-  try {
-    const r = await fetch('https://api.pioupiou.fr/v1/live/all');
-    const json = await r.json();
-    owmStations = json.data
-      .filter(s => s.status?.state === 'on' && s.meta?.name)
-      .sort((a,b) => (a.meta.name).localeCompare(b.meta.name, 'de'));
-    addLog('info', `OpenWindMap: ${owmStations.length} aktive Stationen geladen`);
-  } catch(e) {
-    $('owm-list').innerHTML = `<div class="dd-empty">Fehler: ${e.message}</div>`;
+// ── Panel loading ──────────────────────────────────────────────────────────────
+function loadStationPanel(s) {
+  // Form fields
+  $('owm-display').value    = s.name && s.id ? `${s.name} (${s.id})` : (s.id ? `Station ${s.id}` : '');
+  $('station-name').value   = s.name;
+  $('t-avg').value          = s.tAvg;
+  $('t-avg-on').checked     = s.tAvgOn;
+  $('t-max').value          = s.tMax;
+  $('t-max-on').checked     = s.tMaxOn;
+
+  // Wind display
+  if (s.lastData) {
+    updateUI(s.lastData);
+    setBadgeForStatus(s.status);
+  } else {
+    clearWindDisplay();
+  }
+
+  // Chart
+  if (windChart) { windChart.destroy(); windChart = null; }
+  $('chart-status').textContent = '';
+  if (s.chartRows) {
+    renderChart(s.chartRows, s.chartHours);
+    $('chart-status').textContent = `${s.chartRows.length} Messpunkte`;
+  }
+  // Sync range buttons
+  document.querySelectorAll('.range-btn').forEach(b => {
+    const h = b.textContent === '7d' ? 168 : parseInt(b.textContent);
+    b.classList.toggle('active', h === (s.chartHours ?? 24));
+  });
+}
+
+function clearWindDisplay() {
+  $('w-avg').textContent = '–';
+  $('w-min').textContent = '–';
+  $('w-max').textContent = '–';
+  $('w-dir').textContent = '–';
+  $('w-ts').textContent  = 'Noch keine Daten';
+  $('w-fetched').textContent = '';
+  $('compass-lbl').textContent = '– –';
+  $('needle').setAttribute('transform', 'rotate(0,50,50)');
+  $('wind-card').classList.remove('card-alert');
+  $('owm-link').textContent = '🗺 openwindmap.org';
+  $('owm-link').href = '#';
+  $('badge').className = 'badge badge-off';
+  $('badge').innerHTML = '<span class="dot"></span> Offline';
+}
+
+function setBadgeForStatus(status) {
+  if (status === 'warn') {
+    $('badge').className = 'badge badge-warn';
+    $('badge').innerHTML = '<span class="dot"></span> Alert!';
+  } else if (status === 'err') {
+    $('badge').className = 'badge badge-err';
+    $('badge').innerHTML = '<span class="dot"></span> Fehler';
+  } else if (status === 'ok') {
+    $('badge').className = 'badge badge-ok';
+    $('badge').innerHTML = '<span class="dot"></span> Live';
+  } else {
+    $('badge').className = 'badge badge-off';
+    $('badge').innerHTML = '<span class="dot"></span> Offline';
   }
 }
 
-async function openOWMDropdown() {
-  closeAllDropdowns();
-  $('owm-dropdown').classList.add('open');
-  $('owm-filter').value = $('owm-display').value.match(/\((\d+)\)$/)?.[1] ? '' : $('owm-display').value;
-  await loadOWMStations();
-  filterOWM($('owm-filter').value);
-  $('owm-filter').focus();
-}
-
-function filterOWM(q) {
-  if (!owmStations) return;
-  q = q.toLowerCase().trim();
-  owmFiltered = q
-    ? owmStations.filter(s =>
-        s.meta.name.toLowerCase().includes(q) ||
-        String(s.id).includes(q) ||
-        (s.location?.latitude?.toFixed(2) + ' ' + s.location?.longitude?.toFixed(2)).includes(q)
-      )
-    : owmStations;
-  renderOWMList(owmFiltered.slice(0, 60));
-}
-
-function renderOWMList(list) {
-  const el = $('owm-list');
-  if (!list.length) { el.innerHTML = '<div class="dd-empty">Keine Stationen gefunden</div>'; return; }
-  el.innerHTML = list.map(s => {
-    const name = s.meta.name;
-    const avg  = s.measurements?.wind_speed_avg;
-    const gust = s.measurements?.wind_speed_max;
-    const age  = s.measurements?.date
-      ? Math.round((Date.now() - new Date(s.measurements.date)) / 60000) : null;
-    const ageStr = age == null ? '' : age < 2 ? '· jetzt' : `· ${age} min`;
-    const lat = s.location?.latitude?.toFixed(2);
-    const lon = s.location?.longitude?.toFixed(2);
-    return `<div class="dd-item" onclick="selectOWM(${s.id},'${name.replace(/'/g,"\\'")}')">
-      <div>
-        <div class="dd-name">${name}</div>
-        <div class="dd-sub">ID ${s.id} · ${lat}°N ${lon}°O ${ageStr}</div>
-      </div>
-      <div class="dd-wind">${avg != null ? avg.toFixed(1) : '–'} <span style="font-size:.68rem;color:var(--muted)">/ ${gust != null ? gust.toFixed(1) : '–'} km/h</span></div>
-    </div>`;
-  }).join('');
-}
-
-function selectOWM(id, name) {
-  $('station-id').value  = id;
-  $('owm-display').value = `${name} (${id})`;
-  $('station-name').placeholder = name;
-  closeAllDropdowns();
+// ── Tab management ─────────────────────────────────────────────────────────────
+function switchTab(idx) {
+  saveCurrentStation();
+  activeIdx = idx;
   saveConfig();
-  fetchNow();
-  loadChart(chartHours);
+  renderTabs();
+  loadStationPanel(stations[idx]);
+  // Load chart if not yet loaded
+  if (!stations[idx].chartRows && stations[idx].id) {
+    loadChart(stations[idx].chartHours ?? 24);
+  }
 }
 
+function addStation() {
+  saveCurrentStation();
+  const s = makeStation();
+  stations.push(s);
+  activeIdx = stations.length - 1;
+  saveConfig();
+  renderTabs();
+  loadStationPanel(s);
+  setTimeout(() => $('owm-display').focus(), 50);
+}
 
-// ── Wind data ─────────────────────────────────────────────────────────────────
+function removeStation(idx) {
+  if (stations.length <= 1) return;
+  stations.splice(idx, 1);
+  if (activeIdx >= stations.length) activeIdx = stations.length - 1;
+  saveConfig();
+  renderTabs();
+  loadStationPanel(stations[activeIdx]);
+}
+
+// ── Wind data fetch ────────────────────────────────────────────────────────────
 async function fetchWindData(sid) {
   const r = await fetch(API + sid);
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -792,101 +669,199 @@ async function fetchWindData(sid) {
 }
 
 function updateUI(data) {
-  const m = data.measurements;
-  const sname = $('station-name').value || data.meta?.name || `Station ${data.id}`;
-
-  $('subtitle').textContent = sname + (data.location ? ` · ${data.location.latitude.toFixed(3)}° N, ${data.location.longitude.toFixed(3)}° O` : '');
+  const m   = data.measurements;
   const sid = data.id;
-  $('owm-link').href = `https://www.openwindmap.org/windbird-${sid}`;
+  $('owm-link').href        = `https://www.openwindmap.org/windbird-${sid}`;
   $('owm-link').textContent = `🗺 openwindmap.org/windbird-${sid}`;
-  $('w-avg').textContent = fmt1(m.wind_speed_avg);
-  $('w-min').textContent = fmt1(m.wind_speed_min);
-  $('w-max').textContent = fmt1(m.wind_speed_max);
-
+  $('w-avg').textContent    = fmt1(m.wind_speed_avg);
+  $('w-min').textContent    = fmt1(m.wind_speed_min);
+  $('w-max').textContent    = fmt1(m.wind_speed_max);
   if (m.wind_heading != null) {
     const lbl = dirLabel(m.wind_heading);
-    $('w-dir').textContent = lbl;
+    $('w-dir').textContent       = lbl;
     $('compass-lbl').textContent = `${lbl}  ${Math.round(m.wind_heading)}°`;
     $('needle').setAttribute('transform', `rotate(${m.wind_heading},50,50)`);
   }
-
   if (m.date) {
-    const d = new Date(m.date);
+    const d   = new Date(m.date);
     const age = Math.round((Date.now() - d) / 60000);
-    const ageStr = age < 2 ? 'gerade eben' : `vor ${age} Min`;
-    $('w-ts').textContent = `📡 Sensor: ${d.toLocaleTimeString('de-CH',{hour:'2-digit',minute:'2-digit'})} (${ageStr})`;
+    $('w-ts').textContent = `📡 Sensor: ${d.toLocaleTimeString('de-CH',{hour:'2-digit',minute:'2-digit'})} (${age < 2 ? 'gerade eben' : `vor ${age} Min`})`;
   }
   $('w-fetched').textContent = `🔄 App-Abfrage: ${new Date().toLocaleTimeString('de-CH',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}`;
+}
 
-  // status badge
-  const b = $('badge');
-  b.className = 'badge badge-ok';
-  b.innerHTML = '<span class="dot"></span> Live';
-
-  // station name + display label
-  if (data.meta?.name) {
-    $('station-name').placeholder = data.meta.name;
-    if (!$('owm-display').value || $('owm-display').value.startsWith('Station ')) {
-      $('owm-display').value = `${data.meta.name} (${data.id})`;
+// ── Per-station fetch ──────────────────────────────────────────────────────────
+async function fetchStation(idx) {
+  const s = stations[idx];
+  if (!s?.id) return;
+  try {
+    const json = await fetchWindData(s.id);
+    s.lastData = json.data;
+    checkThresholds(idx, s.lastData);   // sets s.status
+    if (idx === activeIdx) {
+      updateUI(s.lastData);
+      setBadgeForStatus(s.status);
+    }
+    // Auto-name from API on first load
+    if (!s.name && json.data.meta?.name) {
+      s.name = json.data.meta.name;
+      if (idx === activeIdx) {
+        $('owm-display').value        = `${s.name} (${s.id})`;
+        $('station-name').placeholder = s.name;
+      }
       saveConfig();
+      renderTabs();
+    }
+  } catch(e) {
+    s.status = 'err';
+    renderTabs();
+    if (idx === activeIdx) {
+      addLog('alert', `Ladefehler: ${e.message}`);
+      setBadgeForStatus('err');
     }
   }
 }
 
+async function fetchNow() {
+  const s = stations[activeIdx];
+  if (!s?.id) { addLog('warn', 'Keine Station-ID angegeben'); return; }
+  await fetchStation(activeIdx);
+}
 
-// ── Threshold check ───────────────────────────────────────────────────────────
-function checkThresholds(data) {
-  const m = data.measurements;
+async function pollAll() {
+  await Promise.all(stations.map((_, i) => fetchStation(i)));
+}
+
+function restartPolling() {
+  if (pollTimer) clearInterval(pollTimer);
+  if (cdTimer)   clearInterval(cdTimer);
+  const iv = +$('interval').value;
+  pollAll();
+  nextAt    = Date.now() + iv;
+  pollTimer = setInterval(() => { pollAll(); nextAt = Date.now() + iv; }, iv);
+  cdTimer   = setInterval(() => {
+    if (!nextAt) return;
+    const s = Math.max(0, Math.round((nextAt - Date.now()) / 1000));
+    $('countdown').textContent = `↺ in ${s}s`;
+  }, 1000);
+}
+
+// ── Threshold check ────────────────────────────────────────────────────────────
+function checkThresholds(idx, data) {
+  const s = stations[idx];
+  if (!s) return;
+  const m       = data.measurements;
   const reasons = [];
+  if (s.tAvgOn && m.wind_speed_avg != null && m.wind_speed_avg >= s.tAvg)
+    reasons.push(`Ø ${fmt1(m.wind_speed_avg)} km/h ≥ ${s.tAvg} km/h`);
+  if (s.tMaxOn && m.wind_speed_max != null && m.wind_speed_max >= s.tMax)
+    reasons.push(`Böen ${fmt1(m.wind_speed_max)} km/h ≥ ${s.tMax} km/h`);
 
-  if ($('t-avg-on').checked && m.wind_speed_avg >= +$('t-avg').value)
-    reasons.push(`Ø ${fmt1(m.wind_speed_avg)} km/h ≥ ${$('t-avg').value} km/h`);
-  if ($('t-max-on').checked && m.wind_speed_max >= +$('t-max').value)
-    reasons.push(`Böen ${fmt1(m.wind_speed_max)} km/h ≥ ${$('t-max').value} km/h`);
+  s.status = reasons.length ? 'warn' : 'ok';
 
-  const card = $('wind-card');
-  if (reasons.length) {
-    card.classList.add('card-alert');
-    $('badge').className = 'badge badge-warn';
-    $('badge').innerHTML = '<span class="dot"></span> Alert!';
-  } else {
-    card.classList.remove('card-alert');
+  if (idx === activeIdx) {
+    $('wind-card').classList.toggle('card-alert', reasons.length > 0);
   }
+
+  renderTabs();
 
   if (!reasons.length) return;
 
-  const now = Date.now();
+  const now  = Date.now();
   const cdMs = +$('cooldown').value * 60000;
-  if (now - lastAlertAt < cdMs) {
-    const rem = Math.round((cdMs - (now - lastAlertAt)) / 60000);
-    addLog('info', `Threshold überschritten – Pause aktiv (noch ${rem} min)`);
+  if (now - s.lastAlertAt < cdMs) {
+    const rem = Math.round((cdMs - (now - s.lastAlertAt)) / 60000);
+    addLog('info', `[${s.name || s.id}] Threshold – Pause aktiv (noch ${rem} min)`);
     return;
   }
-  lastAlertAt = now;
+  s.lastAlertAt = now;
 
-  const sname = $('station-name').value || data.meta?.name || `Station ${data.id}`;
-  const dir = data.measurements.wind_heading;
-  const msg = `⚠️ Wind Alert: ${sname}\n${reasons.join(', ')}\nRichtung: ${dir != null ? dirLabel(dir) + ' (' + Math.round(dir) + '°)' : '–'}\n${new Date().toLocaleString('de-CH')}`;
+  const sname = s.name || data.meta?.name || `Station ${data.id}`;
+  const dir   = m.wind_heading;
+  const msg   = `⚠️ Wind Alert: ${sname}\n${reasons.join(', ')}\nRichtung: ${dir != null ? dirLabel(dir) + ' (' + Math.round(dir) + '°)' : '–'}\n${new Date().toLocaleString('de-CH')}`;
 
-  addLog('alert', `ALERT ausgelöst: ${reasons.join(' | ')}`);
+  addLog('alert', `[${sname}] ALERT: ${reasons.join(' | ')}`);
   sendWhatsApp(msg);
   if ($('n-notif').checked)  showBrowserNotif(sname, reasons.join(', '));
-  if ($('n-banner').checked) showBanner(reasons.join(' | '));
+  if ($('n-banner').checked) showBanner(`${sname}: ${reasons.join(' | ')}`);
   if ($('n-sound').checked)  playAlertSound();
   if ($('n-dialog').checked) setTimeout(() => alert(`⚠️ Wind Alert: ${sname}\n\n${reasons.join('\n')}`), 100);
 }
 
-// ── Notifications ─────────────────────────────────────────────────────────────
+// ── History chart ──────────────────────────────────────────────────────────────
+async function loadChart(hours, btn) {
+  const s = stations[activeIdx];
+  if (!s) return;
+  s.chartHours = hours;
+  document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const sid = s.id;
+  if (!sid) return;
+  $('chart-status').textContent = 'Lade Verlaufsdaten…';
+  const stop  = new Date();
+  const start = new Date(+stop - hours * 3600 * 1000);
+  const url   = `${ARCHIVE}${sid}?start=${start.toISOString()}&stop=${stop.toISOString()}`;
+  try {
+    const r    = await fetch(url);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const json = await r.json();
+    s.chartRows = json.data || [];
+    renderChart(s.chartRows, hours);
+    $('chart-status').textContent = `${s.chartRows.length} Messpunkte`;
+  } catch(e) {
+    $('chart-status').textContent = `Fehler: ${e.message}`;
+  }
+}
+
+function renderChart(rows, hours) {
+  const labels  = rows.map(r => {
+    const d = new Date(r[0]);
+    return hours <= 48
+      ? d.toLocaleTimeString('de-CH', {hour:'2-digit', minute:'2-digit'})
+      : d.toLocaleDateString('de-CH', {weekday:'short', hour:'2-digit', minute:'2-digit'});
+  });
+  const minData = rows.map(r => r[3]);
+  const avgData = rows.map(r => r[4]);
+  const maxData = rows.map(r => r[5]);
+
+  if (windChart) windChart.destroy();
+  windChart = new Chart($('wind-chart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label:'Max',    data:maxData, fill:'+1', backgroundColor:'rgba(56,189,248,0.12)', borderColor:'rgba(56,189,248,0.2)', borderWidth:1, pointRadius:0, tension:0.3 },
+        { label:'Min',    data:minData, fill:false, borderColor:'rgba(56,189,248,0.12)', borderWidth:1, pointRadius:0, tension:0.3 },
+        { label:'Ø Wind', data:avgData, fill:false, borderColor:'#38bdf8', borderWidth:2, pointRadius:0, tension:0.3 },
+      ],
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false, animation:false,
+      interaction:{ mode:'index', intersect:false },
+      plugins:{
+        legend:{ display:false },
+        tooltip:{
+          backgroundColor:'#1e293b', borderColor:'#475569', borderWidth:1,
+          titleColor:'#94a3b8', bodyColor:'#f1f5f9',
+          callbacks:{ label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y?.toFixed(1)} km/h` },
+        },
+      },
+      scales:{
+        x:{ ticks:{ color:'#475569', maxTicksLimit: hours<=48?12:14, maxRotation:0, font:{size:10} }, grid:{color:'#1e293b'} },
+        y:{ min:0, ticks:{ color:'#475569', font:{size:10} }, grid:{color:'#334155'} },
+      },
+    },
+  });
+}
+
+// ── Notifications ──────────────────────────────────────────────────────────────
 async function sendWhatsApp(text) {
   const phone = $('wa-phone').value.trim();
   const key   = $('wa-key').value.trim();
-  if (!phone || !key) {
-    addLog('info', 'WhatsApp nicht konfiguriert – Alert nur lokal');
-    return;
-  }
+  if (!phone || !key) { addLog('info', 'WhatsApp nicht konfiguriert – Alert nur lokal'); return; }
   try {
     const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(text)}&apikey=${encodeURIComponent(key)}`;
-    await fetch(url, { mode: 'no-cors' });
+    await fetch(url, {mode:'no-cors'});
     addLog('ok', `WhatsApp gesendet an +${phone}`);
   } catch(e) {
     addLog('alert', `WhatsApp Fehler: ${e.message}`);
@@ -895,38 +870,28 @@ async function sendWhatsApp(text) {
 
 function showBrowserNotif(title, body) {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
-  new Notification(`🌬️ Wind Alert: ${title}`, { body });
+  new Notification(`🌬️ Wind Alert: ${title}`, {body});
 }
 
 function showBanner(text) {
   $('banner-text').textContent = text;
   $('alert-banner').classList.add('visible');
 }
-
-function dismissBanner() {
-  $('alert-banner').classList.remove('visible');
-}
+function dismissBanner() { $('alert-banner').classList.remove('visible'); }
 
 function playAlertSound() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    // Three short beeps
-    [0, 0.25, 0.5].forEach(offset => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = 'sine';
-      osc.frequency.value = 880;
-      gain.gain.setValueAtTime(0, ctx.currentTime + offset);
-      gain.gain.linearRampToValueAtTime(0.4, ctx.currentTime + offset + 0.02);
-      gain.gain.linearRampToValueAtTime(0, ctx.currentTime + offset + 0.18);
-      osc.start(ctx.currentTime + offset);
-      osc.stop(ctx.currentTime + offset + 0.2);
+    [0, 0.25, 0.5].forEach(off => {
+      const osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine'; osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0, ctx.currentTime + off);
+      gain.gain.linearRampToValueAtTime(0.4, ctx.currentTime + off + 0.02);
+      gain.gain.linearRampToValueAtTime(0, ctx.currentTime + off + 0.18);
+      osc.start(ctx.currentTime + off); osc.stop(ctx.currentTime + off + 0.2);
     });
-  } catch(e) {
-    addLog('info', `Ton nicht möglich: ${e.message}`);
-  }
+  } catch(e) { addLog('info', `Ton nicht möglich: ${e.message}`); }
 }
 
 async function maybeRequestNotif() {
@@ -938,195 +903,118 @@ async function maybeRequestNotif() {
 }
 
 async function testAllAlerts() {
-  const sname = $('station-name').value || $('station-name').placeholder || 'Teststation';
-  addLog('info', 'Starte Test aller Benachrichtigungen...');
+  const s = stations[activeIdx];
+  const sname = s?.name || (s?.id ? `Station ${s.id}` : 'Test');
+  addLog('info', 'Test aller Benachrichtigungen…');
   if ($('n-sound').checked)  playAlertSound();
-  if ($('n-banner').checked) showBanner(`Test: Schiberenegg – Böen 42.0 km/h`);
+  if ($('n-banner').checked) showBanner(`Test: ${sname} – Böen 42.0 km/h`);
   if ($('n-notif').checked)  showBrowserNotif(sname, 'Test: Böen 42 km/h');
   if ($('n-dialog').checked) setTimeout(() => alert(`⚠️ Wind Alert TEST\nStation: ${sname}\nBöen 42 km/h`), 100);
 }
 
 async function testWhatsApp() {
-  const sname = $('station-name').value || $('station-name').placeholder || 'Teststation';
-  addLog('info', 'Sende Test-Nachricht...');
+  const s = stations[activeIdx];
+  const sname = s?.name || (s?.id ? `Station ${s.id}` : 'Test');
+  addLog('info', 'Sende Test-Nachricht…');
   await sendWhatsApp(`🧪 Wind Alert Test\nStation: ${sname}\nDie Alerts sind aktiv.\n${new Date().toLocaleString('de-CH')}`);
 }
 
-// ── Log ───────────────────────────────────────────────────────────────────────
+// ── Log ────────────────────────────────────────────────────────────────────────
 function addLog(type, msg) {
   const log = $('log');
-  const el = document.createElement('div');
+  const el  = document.createElement('div');
   el.className = `log-entry ${type}`;
   el.innerHTML = `<span class="log-t">${ts()}</span><span>${msg}</span>`;
   log.prepend(el);
-  // keep max 60 entries
-  while (log.children.length > 60) log.removeChild(log.lastChild);
+  while (log.children.length > 80) log.removeChild(log.lastChild);
 }
+function clearLog() { $('log').innerHTML = ''; addLog('info', 'Protokoll geleert'); }
 
-function clearLog() {
-  $('log').innerHTML = '';
-  addLog('info', 'Protokoll geleert');
+// ── OWM search dropdown ────────────────────────────────────────────────────────
+function closeAllDropdowns() {
+  document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('open'));
 }
+document.addEventListener('click', e => {
+  if (!e.target.closest('.search-wrap')) closeAllDropdowns();
+});
 
-// ── Polling ───────────────────────────────────────────────────────────────────
-async function fetchNow() {
-  const sid = $('station-id').value.trim();
-  if (!sid) { addLog('warn', 'Keine Station-ID angegeben'); return; }
+async function loadOWMStations() {
+  if (owmStations) return;
+  $('owm-list').innerHTML = '<div class="dd-empty">Lade ~500 Stationen…</div>';
   try {
-    const json = await fetchWindData(sid);
-    lastData = json.data;
-    updateUI(lastData);
-    checkThresholds(lastData);
-  } catch(e) {
-    addLog('alert', `Ladefehler: ${e.message}`);
-    $('badge').className = 'badge badge-err';
-    $('badge').innerHTML = '<span class="dot"></span> Fehler';
-  }
-}
-
-function restartPolling() {
-  if (pollTimer) clearInterval(pollTimer);
-  if (cdTimer)   clearInterval(cdTimer);
-  const iv = +$('interval').value;
-  fetchNow();
-  nextAt = Date.now() + iv;
-  pollTimer = setInterval(() => { fetchNow(); nextAt = Date.now() + iv; }, iv);
-  cdTimer = setInterval(() => {
-    if (!nextAt) return;
-    const s = Math.max(0, Math.round((nextAt - Date.now()) / 1000));
-    $('countdown').textContent = `↺ in ${s}s`;
-  }, 1000);
-}
-
-// ── History Chart ─────────────────────────────────────────────────────────────
-const ARCHIVE = 'https://api.pioupiou.fr/v1/archive/';
-let chartHours = 24;
-let windChart  = null;
-
-async function loadChart(hours, btn) {
-  chartHours = hours;
-  document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-
-  const sid = $('station-id').value.trim();
-  if (!sid) return;
-
-  $('chart-status').textContent = 'Lade Verlaufsdaten…';
-  const stop  = new Date();
-  const start = new Date(stop - hours * 3600 * 1000);
-  const url   = `${ARCHIVE}${sid}?start=${start.toISOString()}&stop=${stop.toISOString()}`;
-
-  try {
-    const r    = await fetch(url);
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const r    = await fetch('https://api.pioupiou.fr/v1/live/all');
     const json = await r.json();
-    renderChart(json.data || [], hours);
-    $('chart-status').textContent = `${json.data?.length || 0} Messpunkte`;
+    owmStations = json.data
+      .filter(s => s.status?.state === 'on' && s.meta?.name)
+      .sort((a, b) => a.meta.name.localeCompare(b.meta.name, 'de'));
+    addLog('info', `OpenWindMap: ${owmStations.length} aktive Stationen geladen`);
   } catch(e) {
-    $('chart-status').textContent = `Fehler: ${e.message}`;
+    $('owm-list').innerHTML = `<div class="dd-empty">Fehler: ${e.message}</div>`;
   }
 }
 
-function renderChart(rows, hours) {
-  // rows: [time, lat, lon, min, avg, max, heading, pressure]
-  const labels = rows.map(r => {
-    const d = new Date(r[0]);
-    if (hours <= 48) return d.toLocaleTimeString('de-CH', {hour:'2-digit', minute:'2-digit'});
-    return d.toLocaleDateString('de-CH', {weekday:'short', hour:'2-digit', minute:'2-digit'});
-  });
-  const minData = rows.map(r => r[3]);
-  const avgData = rows.map(r => r[4]);
-  const maxData = rows.map(r => r[5]);
-
-  // draw threshold lines
-  const tAvgOn = $('t-avg-on').checked;
-  const tMaxOn = $('t-max-on').checked;
-  const tAvg   = +$('t-avg').value;
-  const tMax   = +$('t-max').value;
-
-  if (windChart) windChart.destroy();
-
-  windChart = new Chart($('wind-chart'), {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [
-        {
-          label: 'Max',
-          data: maxData,
-          fill: '+1',
-          backgroundColor: 'rgba(56,189,248,0.15)',
-          borderColor: 'rgba(56,189,248,0.25)',
-          borderWidth: 1,
-          pointRadius: 0,
-          tension: 0.3,
-        },
-        {
-          label: 'Min',
-          data: minData,
-          fill: false,
-          borderColor: 'rgba(56,189,248,0.15)',
-          borderWidth: 1,
-          pointRadius: 0,
-          tension: 0.3,
-        },
-        {
-          label: 'Ø Wind',
-          data: avgData,
-          fill: false,
-          borderColor: '#38bdf8',
-          borderWidth: 2,
-          pointRadius: 0,
-          tension: 0.3,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: false,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#1e293b',
-          borderColor: '#475569',
-          borderWidth: 1,
-          titleColor: '#94a3b8',
-          bodyColor: '#f1f5f9',
-          callbacks: {
-            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y?.toFixed(1)} km/h`,
-          },
-        },
-        annotation: buildAnnotations(tAvgOn, tAvg, tMaxOn, tMax),
-      },
-      scales: {
-        x: {
-          ticks: {
-            color: '#475569',
-            maxTicksLimit: hours <= 48 ? 12 : 14,
-            maxRotation: 0,
-            font: { size: 10 },
-          },
-          grid: { color: '#1e293b' },
-        },
-        y: {
-          min: 0,
-          ticks: { color: '#475569', font: { size: 10 } },
-          grid: { color: '#334155' },
-        },
-      },
-    },
-  });
+async function openOWMDropdown() {
+  closeAllDropdowns();
+  $('owm-dropdown').classList.add('open');
+  $('owm-filter').value = $('owm-display').value.match(/\((\d+)\)$/) ? '' : $('owm-display').value;
+  await loadOWMStations();
+  filterOWM($('owm-filter').value);
+  setTimeout(() => $('owm-filter').focus(), 10);
 }
 
-function buildAnnotations(tAvgOn, tAvg, tMaxOn, tMax) {
-  // requires chartjs-plugin-annotation – skip if not loaded, draw manually instead
-  return {};
+function filterOWM(q) {
+  if (!owmStations) return;
+  q = q.toLowerCase().trim();
+  owmFiltered = q
+    ? owmStations.filter(s =>
+        s.meta.name.toLowerCase().includes(q) ||
+        String(s.id).includes(q) ||
+        (s.location?.latitude?.toFixed(2) + ' ' + s.location?.longitude?.toFixed(2)).includes(q))
+    : owmStations;
+  renderOWMList(owmFiltered.slice(0, 60));
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────────
+function renderOWMList(list) {
+  const el = $('owm-list');
+  if (!list.length) { el.innerHTML = '<div class="dd-empty">Keine Stationen gefunden</div>'; return; }
+  el.innerHTML = list.map(s => {
+    const name   = s.meta.name;
+    const avg    = s.measurements?.wind_speed_avg;
+    const gust   = s.measurements?.wind_speed_max;
+    const age    = s.measurements?.date ? Math.round((Date.now() - new Date(s.measurements.date)) / 60000) : null;
+    const ageStr = age == null ? '' : age < 2 ? '· jetzt' : `· ${age} min`;
+    const lat    = s.location?.latitude?.toFixed(2);
+    const lon    = s.location?.longitude?.toFixed(2);
+    return `<div class="dd-item" onclick="selectOWM(${s.id},'${name.replace(/'/g, "\\'")}')">
+      <div>
+        <div class="dd-name">${name}</div>
+        <div class="dd-sub">ID ${s.id} · ${lat}°N ${lon}°O ${ageStr}</div>
+      </div>
+      <div class="dd-wind">${avg != null ? avg.toFixed(1) : '–'} <span style="font-size:.68rem;color:var(--muted)">/ ${gust != null ? gust.toFixed(1) : '–'} km/h</span></div>
+    </div>`;
+  }).join('');
+}
+
+function selectOWM(id, name) {
+  const s  = stations[activeIdx];
+  if (!s) return;
+  s.id     = String(id);
+  s.name   = name;
+  s.status = 'off';
+  $('owm-display').value        = `${name} (${id})`;
+  $('station-name').value       = name;
+  $('station-name').placeholder = name;
+  closeAllDropdowns();
+  saveConfig();
+  renderTabs();
+  fetchNow();
+  loadChart(s.chartHours ?? 24);
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────────
 loadConfig();
+renderTabs();
+loadStationPanel(stations[activeIdx]);
 if ('Notification' in window && Notification.permission === 'default' && $('n-notif').checked) {
   Notification.requestPermission();
 }
