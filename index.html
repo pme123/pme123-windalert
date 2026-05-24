@@ -502,19 +502,31 @@ function makeStation(id = '', name = '') {
 // ── Persistence ────────────────────────────────────────────────────────────────
 function loadConfig() {
   try {
-    const c = JSON.parse(localStorage.getItem('waCfg2') || '{}');
+    const c   = JSON.parse(localStorage.getItem('waCfg2') || '{}');
+    const old = JSON.parse(localStorage.getItem('waCfg')  || '{}'); // migrate from v1
+
     stations = (c.stations && c.stations.length)
       ? c.stations.map(s => ({ ...makeStation(), ...s, lastData: null, lastAlertAt: 0, chartRows: null }))
-      : [makeStation('2172', 'Schiberenegg')];
+      : [makeStation(old.sid ?? '2172', old.sname ?? 'Schiberenegg')];
     activeIdx = Math.min(+(c.activeIdx ?? 0), stations.length - 1);
-    $('wa-phone').value   = c.phone   ?? '';
-    $('wa-key').value     = c.key     ?? '';
-    $('n-dialog').checked = c.nDialog ?? false;
-    $('n-sound').checked  = c.nSound  ?? true;
-    $('n-banner').checked = c.nBanner ?? true;
-    $('n-notif').checked  = c.nNotif  ?? true;
-    $('cooldown').value   = c.cd      ?? 30;
-    $('interval').value   = c.iv      ?? 300000;
+
+    // fall back to old config keys if new ones are absent
+    $('wa-phone').value   = c.phone   ?? old.phone   ?? '';
+    $('wa-key').value     = c.key     ?? old.key     ?? '';
+    $('n-dialog').checked = c.nDialog ?? old.nDialog ?? false;
+    $('n-sound').checked  = c.nSound  ?? old.nSound  ?? true;
+    $('n-banner').checked = c.nBanner ?? old.nBanner ?? true;
+    $('n-notif').checked  = c.nNotif  ?? old.nNotif  ?? true;
+    $('cooldown').value   = c.cd      ?? old.cd      ?? 30;
+    $('interval').value   = c.iv      ?? old.iv      ?? 300000;
+
+    // also restore per-station thresholds from old config if single-station migration
+    if (!c.stations?.length && old.tAvg != null) {
+      stations[0].tAvg   = old.tAvg;
+      stations[0].tAvgOn = old.tAvgOn ?? false;
+      stations[0].tMax   = old.tMax   ?? 40;
+      stations[0].tMaxOn = old.tMaxOn ?? true;
+    }
   } catch(e) { stations = [makeStation('2172', 'Schiberenegg')]; }
 }
 
@@ -858,7 +870,7 @@ function renderChart(rows, hours) {
 async function sendWhatsApp(text) {
   const phone = $('wa-phone').value.trim();
   const key   = $('wa-key').value.trim();
-  if (!phone || !key) { addLog('info', 'WhatsApp nicht konfiguriert – Alert nur lokal'); return; }
+  if (!phone || !key) { addLog('warn', 'WhatsApp nicht konfiguriert (Nummer/Key fehlt) – Alert nur lokal'); return; }
   try {
     const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(text)}&apikey=${encodeURIComponent(key)}`;
     await fetch(url, {mode:'no-cors'});
