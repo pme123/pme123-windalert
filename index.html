@@ -413,7 +413,7 @@
   </div>
 
   <!-- Compass -->
-  <div class="card">
+  <div class="card" id="compass-card">
     <div class="card-title">Windrichtung</div>
     <div class="compass-wrap">
       <svg id="compass" viewBox="0 0 100 100" width="130" height="130">
@@ -686,6 +686,7 @@ let cdTimer = null;
 let nextAt = null;
 let lastAlertAt = 0;
 let lastData = null;
+let activeSource = 'windbird'; // 'windbird' | 'owm'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
@@ -720,8 +721,9 @@ function loadConfig() {
     $('ow-lat').value      = c.owLat    ?? '';
     $('ow-lon').value      = c.owLon    ?? '';
     $('ow-display').value  = c.owLabel  ?? '';
+    activeSource           = c.activeSource ?? 'windbird';
   } catch(e) {}
-  toggleOW();
+  setActiveSource(activeSource);
 }
 
 function saveConfig() {
@@ -745,7 +747,8 @@ function saveConfig() {
     owLabel:  $('ow-display').value,
     owLat:    $('ow-lat').value,
     owLon:    $('ow-lon').value,
-    owmLabel: $('owm-display').value,
+    owmLabel:     $('owm-display').value,
+    activeSource: activeSource,
   }));
 }
 
@@ -825,7 +828,7 @@ function selectOWM(id, name) {
   $('owm-display').value = `${name} (${id})`;
   $('station-name').placeholder = name;
   closeAllDropdowns();
-  saveConfig();
+  setActiveSource('windbird');
   fetchNow();
 }
 
@@ -906,15 +909,27 @@ function selectOW(lat, lon, name, state) {
   $('ow-display').value = state ? `${name}, ${state}` : name;
   $('ow-name').placeholder = name;
   closeAllDropdowns();
-  saveConfig();
-  toggleOW();
+  setActiveSource('owm');
   fetchOWNow();
+}
+
+// ── Source switching ──────────────────────────────────────────────────────────
+function setActiveSource(src) {
+  activeSource = src;
+  const isWindbird = src === 'windbird';
+  $('wind-card').style.display    = isWindbird ? '' : 'none';
+  $('compass-card').style.display = isWindbird ? '' : 'none';
+  $('ow-card').style.display      = isWindbird ? 'none' : '';
+  saveConfig();
 }
 
 // ── OWM helpers ───────────────────────────────────────────────────────────────
 function toggleOW() {
-  const active = $('ow-lat').value && $('ow-apikey').value.trim();
-  $('ow-card').style.display = active ? '' : 'none';
+  // only auto-show if OWM is already the active source
+  if (activeSource === 'owm') {
+    const active = $('ow-lat').value && $('ow-apikey').value.trim();
+    $('ow-card').style.display = active ? '' : 'none';
+  }
 }
 
 // ── Wind data ─────────────────────────────────────────────────────────────────
@@ -1183,7 +1198,7 @@ async function fetchNow() {
   // run both in parallel
   const tasks = [];
 
-  if (sid) tasks.push(
+  if (activeSource === 'windbird' && sid) tasks.push(
     fetchWindData(sid)
       .then(json => { lastData = json.data; updateUI(lastData); checkThresholds(lastData); })
       .catch(e => {
@@ -1196,7 +1211,7 @@ async function fetchNow() {
   const owLat = $('ow-lat').value;
   const owLon = $('ow-lon').value;
   const owKey = $('ow-apikey').value.trim();
-  if (owLat && owLon && owKey) tasks.push(
+  if (activeSource === 'owm' && owLat && owLon && owKey) tasks.push(
     fetchOWData(owLat, owLon, owKey)
       .then(d => { updateOWCard(d); checkThresholdsOW(d); })
       .catch(e => {
