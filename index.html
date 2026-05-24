@@ -993,6 +993,12 @@ function updateOWCard(d) {
   const ms2km = v => v != null ? (v * 3.6).toFixed(1) : '–';
   const sname = $('ow-name').value || d.name || 'OpenWeatherMap';
   $('ow-name-lbl').textContent = sname;
+  // update header
+  const lat = d.coord?.lat?.toFixed(3);
+  const lon = d.coord?.lon?.toFixed(3);
+  $('subtitle').textContent = sname + (lat ? ` · ${lat}° N, ${lon}° O` : '');
+  $('owm-link').href = `https://openweathermap.org/city/${d.id}`;
+  $('owm-link').textContent = `🌤 openweathermap.org`;
   $('ow-avg').textContent  = ms2km(d.wind?.speed);
   $('ow-gust').textContent = d.wind?.gust != null ? ms2km(d.wind.gust) : '–';
   $('ow-dir').textContent  = d.wind?.deg  != null ? dirLabel(d.wind.deg) : '–';
