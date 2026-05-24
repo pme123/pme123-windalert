@@ -380,12 +380,12 @@
       <div class="thresh-row">
         <span class="lbl">Ø Windstärke</span>
         <label class="toggle"><input type="checkbox" id="t-avg-on" onchange="saveCurrentStation()"><span class="slider"></span></label>
-        <div class="inline"><input type="number" id="t-avg" value="20" min="0" max="999" step="0.1" onchange="saveCurrentStation()"><span class="suffix" id="t-avg-suf">kn</span></div>
+        <div class="inline"><input type="number" id="t-avg" value="20" min="0" max="999" step="1" onchange="saveCurrentStation()"><span class="suffix" id="t-avg-suf">kn</span></div>
       </div>
       <div class="thresh-row">
         <span class="lbl">Max Böen</span>
         <label class="toggle"><input type="checkbox" id="t-max-on" checked onchange="saveCurrentStation()"><span class="slider"></span></label>
-        <div class="inline"><input type="number" id="t-max" value="40" min="0" max="999" step="0.1" onchange="saveCurrentStation()"><span class="suffix" id="t-max-suf">kn</span></div>
+        <div class="inline"><input type="number" id="t-max" value="40" min="0" max="999" step="1" onchange="saveCurrentStation()"><span class="suffix" id="t-max-suf">kn</span></div>
       </div>
       <div class="field" style="margin-top:16px">
         <label style="margin-bottom:8px">Benachrichtigungen</label>
@@ -521,7 +521,7 @@ function fmtWind(kmh) {
 function fmtThresh(kmh) {
   const v = kmhToUnit(kmh);
   if (v == null) return '';
-  return unit === 'bft' ? String(Math.round(v)) : String(+(v.toFixed(1)));
+  return String(Math.round(v));   // always integer for all units
 }
 
 function updateUnitUI() {
