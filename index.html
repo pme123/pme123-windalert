@@ -875,19 +875,42 @@ function renderChart(rows, hours) {
 }
 
 // ── Notifications ──────────────────────────────────────────────────────────────
-async function sendWhatsApp(text) {
+async function sendWhatsApp(text, attempt = 1) {
   const phone = $('wa-phone').value.trim();
   const key   = $('wa-key').value.trim();
   if (!phone || !key) {
     addLog('warn', `WhatsApp nicht konfiguriert – ${!phone ? 'Nummer' : 'API Key'} fehlt`);
     return;
   }
+  const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(text)}&apikey=${encodeURIComponent(key)}`;
   try {
-    const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(text)}&apikey=${encodeURIComponent(key)}`;
-    await fetch(url, {mode:'no-cors'});
+    // Try with full CORS first so we can read the HTTP status code
+    const r = await fetch(url);
+    if (r.status === 503 || r.status === 502 || r.status === 429) {
+      // Server overloaded – retry up to 3× with back-off
+      if (attempt <= 3) {
+        const wait = attempt * 10;
+        addLog('warn', `WhatsApp Server ${r.status} – Retry ${attempt}/3 in ${wait}s…`);
+        setTimeout(() => sendWhatsApp(text, attempt + 1), wait * 1000);
+      } else {
+        addLog('alert', `WhatsApp Fehler: Server ${r.status} nach 3 Versuchen`);
+      }
+      return;
+    }
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
     addLog('ok', `WhatsApp gesendet an +${phone}`);
   } catch(e) {
-    addLog('alert', `WhatsApp Fehler: ${e.message}`);
+    if (e.message.includes('CORS') || e.message.includes('Failed to fetch') || e.name === 'TypeError') {
+      // CORS blocked – fall back to no-cors beacon (fire-and-forget)
+      try {
+        await fetch(url, {mode: 'no-cors'});
+        addLog('ok', `WhatsApp gesendet an +${phone} (kein Status lesbar)`);
+      } catch(e2) {
+        addLog('alert', `WhatsApp Fehler: ${e2.message}`);
+      }
+    } else {
+      addLog('alert', `WhatsApp Fehler: ${e.message}`);
+    }
   }
 }
 
