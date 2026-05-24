@@ -510,9 +510,11 @@ function loadConfig() {
       : [makeStation(old.sid ?? '2172', old.sname ?? 'Schiberenegg')];
     activeIdx = Math.min(+(c.activeIdx ?? 0), stations.length - 1);
 
-    // fall back to old config keys if new ones are absent
-    $('wa-phone').value   = c.phone   ?? old.phone   ?? '';
-    $('wa-key').value     = c.key     ?? old.key     ?? '';
+    // || instead of ?? so empty-string values from waCfg2 also fall back to old config
+    const phone = c.phone || old.phone || '';
+    const key   = c.key   || old.key   || '';
+    $('wa-phone').value   = phone;
+    $('wa-key').value     = key;
     $('n-dialog').checked = c.nDialog ?? old.nDialog ?? false;
     $('n-sound').checked  = c.nSound  ?? old.nSound  ?? true;
     $('n-banner').checked = c.nBanner ?? old.nBanner ?? true;
@@ -520,12 +522,18 @@ function loadConfig() {
     $('cooldown').value   = c.cd      ?? old.cd      ?? 30;
     $('interval').value   = c.iv      ?? old.iv      ?? 300000;
 
-    // also restore per-station thresholds from old config if single-station migration
+    // restore per-station thresholds from old config on first migration
     if (!c.stations?.length && old.tAvg != null) {
       stations[0].tAvg   = old.tAvg;
       stations[0].tAvgOn = old.tAvgOn ?? false;
       stations[0].tMax   = old.tMax   ?? 40;
       stations[0].tMaxOn = old.tMaxOn ?? true;
+    }
+
+    // if we pulled values from old config, persist them into waCfg2 immediately
+    if ((!c.phone && phone) || (!c.key && key)) {
+      // defer so DOM is ready (saveConfig reads from inputs)
+      setTimeout(saveConfig, 0);
     }
   } catch(e) { stations = [makeStation('2172', 'Schiberenegg')]; }
 }
@@ -870,7 +878,10 @@ function renderChart(rows, hours) {
 async function sendWhatsApp(text) {
   const phone = $('wa-phone').value.trim();
   const key   = $('wa-key').value.trim();
-  if (!phone || !key) { addLog('warn', 'WhatsApp nicht konfiguriert (Nummer/Key fehlt) – Alert nur lokal'); return; }
+  if (!phone || !key) {
+    addLog('warn', `WhatsApp nicht konfiguriert – ${!phone ? 'Nummer' : 'API Key'} fehlt`);
+    return;
+  }
   try {
     const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(text)}&apikey=${encodeURIComponent(key)}`;
     await fetch(url, {mode:'no-cors'});
