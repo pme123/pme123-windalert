@@ -41,13 +41,20 @@
       text-decoration: none;
       flex-shrink: 0;
     }
-    .z9-brand-logo {
+    .z9-logo-wrap {
+      position: relative;
       width: 36px; height: 36px;
-      transition: filter .2s;
+      flex-shrink: 0;
     }
-    .z9-brand-link:hover .z9-brand-logo {
-      filter: brightness(0) invert(1);
+    .z9-logo-wrap img {
+      position: absolute;
+      inset: 0;
+      width: 36px; height: 36px;
+      transition: opacity .2s;
     }
+    .z9-logo-white { opacity: 0; }
+    .z9-brand-link:hover .z9-logo-color { opacity: 0; }
+    .z9-brand-link:hover .z9-logo-white { opacity: 1; }
     .z9-byline {
       font-family: 'Courier New', Courier, monospace;
       font-size: .65rem;
@@ -56,7 +63,6 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      margin-top: 1px;
       transition: all .2s;
     }
     .z9-brand-link:hover .z9-byline {
@@ -358,13 +364,14 @@
 
 <!-- Header -->
 <div class="header">
-  <div style="display:flex; align-items:center; gap:14px">
-    <a href="https://z9nai.ch" target="_blank" rel="noopener" class="z9-brand-link">
-      <img src="https://z9nai.ch/assets/logo_new-DwOlNuuy.png" alt="z9nai" class="z9-brand-logo">
-      <div class="z9-byline">by z9nai GmbH</div>
-    </a>
+  <a href="https://z9nai.ch" target="_blank" rel="noopener" class="z9-brand-link">
+    <div class="z9-logo-wrap">
+      <img src="https://z9nai.ch/assets/logo_new-DwOlNuuy.png"       alt="z9nai" class="z9-logo-color">
+      <img src="https://z9nai.ch/assets/logo_new_white-BXK2S0Ym.png" alt="z9nai" class="z9-logo-white">
+    </div>
     <h1>Wind Alert</h1>
-  </div>
+    <div class="z9-byline">by z9nai GmbH</div>
+  </a>
   <div class="header-right">
     <span id="countdown"></span>
     <span id="badge" class="badge badge-off"><span class="dot"></span> Offline</span>
