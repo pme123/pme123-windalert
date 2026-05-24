@@ -250,9 +250,8 @@
     }
     .range-btn.active { background: rgba(56,189,248,.15); border-color: var(--accent); color: var(--accent); }
     .chart-wrap { position: relative; height: 160px; }
-    #station-map { height: 220px; border-radius: 8px; overflow: hidden; }
+    #station-map { height: 200px; border-radius: 8px; overflow: hidden; }
     .leaflet-container { background: #1e293b; }
-    #map-card { display: none; }
 
     /* ── Form controls ── */
     .field { margin-bottom: 12px; }
@@ -460,13 +459,6 @@
       <div class="ts" id="chart-status" style="margin-top:8px;text-align:center"></div>
     </div>
 
-    <!-- Map -->
-    <div class="card span2" id="map-card">
-      <div class="card-title" style="margin-bottom:10px">Standort</div>
-      <div id="station-map"></div>
-      <div class="ts" id="map-coords" style="margin-top:6px;text-align:center"></div>
-    </div>
-
     <!-- Thresholds -->
     <div class="card">
       <div class="card-title">Schwellenwerte</div>
@@ -526,6 +518,10 @@
           onchange="saveCurrentStation(); renderTabs()">
       </div>
       <button class="btn-primary btn-block" onclick="fetchNow()" style="margin-top:4px">↺ Jetzt laden</button>
+      <div id="map-card" style="display:none;margin-top:14px">
+        <div id="station-map"></div>
+        <div class="ts" id="map-coords" style="margin-top:6px;text-align:center"></div>
+      </div>
     </div>
 
   </div>
