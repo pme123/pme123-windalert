@@ -147,6 +147,16 @@
     }
     .card-alert { border-color: var(--red); box-shadow: 0 0 0 1px var(--red), 0 0 20px rgba(248,113,113,.15); }
 
+    /* ── Unit selector ── */
+    .unit-btns { display: flex; gap: 3px; }
+    .unit-btn {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 5px; padding: 3px 8px;
+      font-size: .68rem; font-weight: 700; color: var(--muted);
+      cursor: pointer; transition: all .15s;
+    }
+    .unit-btn.active { background: rgba(56,189,248,.15); border-color: var(--accent); color: var(--accent); }
+
     /* ── Wind display ── */
     .wind-main { display: flex; align-items: baseline; gap: 6px; }
     .wind-big { font-size: 4.5rem; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
@@ -301,13 +311,19 @@
 
     <!-- Wind -->
     <div class="card" id="wind-card">
-      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <span>Aktuell</span>
-        <a id="owm-link" href="#" target="_blank" rel="noopener" style="font-size:.72rem;color:var(--accent);text-decoration:none;font-weight:400">🗺 openwindmap.org</a>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div class="card-title" style="margin:0">Aktuell</div>
+        <div class="unit-btns">
+          <button class="unit-btn" id="unit-kn"  onclick="switchUnit('kn')">kn</button>
+          <button class="unit-btn" id="unit-kmh" onclick="switchUnit('kmh')">km/h</button>
+          <button class="unit-btn" id="unit-bft" onclick="switchUnit('bft')">Bft</button>
+        </div>
       </div>
+      <a id="owm-link" href="#" target="_blank" rel="noopener"
+         style="font-size:.72rem;color:var(--accent);text-decoration:none;display:block;margin-bottom:8px">🗺 openwindmap.org</a>
       <div class="wind-main">
         <span class="wind-big" id="w-avg">–</span>
-        <span class="wind-unit">km/h</span>
+        <span class="wind-unit" id="wind-unit">kn</span>
       </div>
       <div class="wind-stats">
         <div class="stat"><div class="stat-lbl">Min</div><div class="stat-val" id="w-min">–</div></div>
@@ -364,12 +380,12 @@
       <div class="thresh-row">
         <span class="lbl">Ø Windstärke</span>
         <label class="toggle"><input type="checkbox" id="t-avg-on" onchange="saveCurrentStation()"><span class="slider"></span></label>
-        <div class="inline"><input type="number" id="t-avg" value="20" min="0" max="300" onchange="saveCurrentStation()"><span class="suffix">km/h</span></div>
+        <div class="inline"><input type="number" id="t-avg" value="20" min="0" max="999" step="0.1" onchange="saveCurrentStation()"><span class="suffix" id="t-avg-suf">kn</span></div>
       </div>
       <div class="thresh-row">
         <span class="lbl">Max Böen</span>
         <label class="toggle"><input type="checkbox" id="t-max-on" checked onchange="saveCurrentStation()"><span class="slider"></span></label>
-        <div class="inline"><input type="number" id="t-max" value="40" min="0" max="300" onchange="saveCurrentStation()"><span class="suffix">km/h</span></div>
+        <div class="inline"><input type="number" id="t-max" value="40" min="0" max="999" step="0.1" onchange="saveCurrentStation()"><span class="suffix" id="t-max-suf">kn</span></div>
       </div>
       <div class="field" style="margin-top:16px">
         <label style="margin-bottom:8px">Benachrichtigungen</label>
@@ -467,9 +483,63 @@ const DIRS    = ['N','NNO','NO','ONO','O','OSO','SO','SSO','S','SSW','SW','WSW',
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
-const fmt1 = v => v != null ? v.toFixed(1) : '–';
 const ts   = () => new Date().toLocaleTimeString('de-CH', {hour:'2-digit', minute:'2-digit'});
 const dirLabel = deg => DIRS[Math.round(deg / 22.5) % 16];
+
+// ── Units ──────────────────────────────────────────────────────────────────────
+let unit = 'kn'; // 'kn' | 'kmh' | 'bft'
+
+// Beaufort: lower bound of each level in km/h
+const BFT_LIMITS = [1, 6, 12, 20, 29, 39, 50, 62, 75, 89, 103, 118];
+// Midpoint of each Beaufort band (for reverse conversion)
+const BFT_MID    = [0, 3, 9, 16, 24, 33, 44, 56, 68, 82, 96, 110, 125];
+
+function kmhToUnit(kmh) {
+  if (kmh == null) return null;
+  if (unit === 'kmh') return kmh;
+  if (unit === 'kn')  return kmh / 1.852;
+  // Beaufort
+  for (let i = 0; i < BFT_LIMITS.length; i++) if (kmh < BFT_LIMITS[i]) return i;
+  return 12;
+}
+
+function unitToKmh(val) {
+  if (val == null || val === '') return null;
+  if (unit === 'kmh') return +val;
+  if (unit === 'kn')  return +val * 1.852;
+  return BFT_MID[Math.min(12, Math.max(0, Math.round(+val)))]; // Beaufort → midpoint
+}
+
+function unitLabel() { return unit === 'kmh' ? 'km/h' : unit === 'kn' ? 'kn' : 'Bft'; }
+
+function fmtWind(kmh) {
+  const v = kmhToUnit(kmh);
+  if (v == null) return '–';
+  return unit === 'bft' ? String(Math.round(v)) : v.toFixed(1);
+}
+
+function fmtThresh(kmh) {
+  const v = kmhToUnit(kmh);
+  if (v == null) return '';
+  return unit === 'bft' ? String(Math.round(v)) : String(+(v.toFixed(1)));
+}
+
+function updateUnitUI() {
+  ['kn','kmh','bft'].forEach(u => $('unit-'+u)?.classList.toggle('active', u === unit));
+  $('wind-unit')   && ($('wind-unit').textContent   = unitLabel());
+  $('t-avg-suf')   && ($('t-avg-suf').textContent   = unitLabel());
+  $('t-max-suf')   && ($('t-max-suf').textContent   = unitLabel());
+}
+
+function switchUnit(u) {
+  saveCurrentStation();   // save thresholds while still in old unit
+  unit = u;
+  saveConfig();
+  updateUnitUI();
+  loadStationPanel(stations[activeIdx]);
+  const s = stations[activeIdx];
+  if (s.chartRows) renderChart(s.chartRows, s.chartHours);
+}
 
 // ── Multi-station state ────────────────────────────────────────────────────────
 let stations  = [];   // array of station objects
@@ -521,6 +591,7 @@ function loadConfig() {
     $('n-notif').checked  = c.nNotif  ?? old.nNotif  ?? true;
     $('cooldown').value   = c.cd      ?? old.cd      ?? 30;
     $('interval').value   = c.iv      ?? old.iv      ?? 300000;
+    unit = c.unit ?? 'kn';
 
     // restore per-station thresholds from old config on first migration
     if (!c.stations?.length && old.tAvg != null) {
@@ -550,6 +621,7 @@ function saveConfig() {
     nNotif:  $('n-notif').checked,
     cd:      +$('cooldown').value,
     iv:      +$('interval').value,
+    unit,
   }));
 }
 
@@ -559,9 +631,9 @@ function saveCurrentStation() {
   const s = stations[activeIdx];
   if (!s) return;
   s.name   = $('station-name').value.trim();
-  s.tAvg   = +$('t-avg').value;
+  s.tAvg   = unitToKmh($('t-avg').value) ?? s.tAvg;  // convert display unit → km/h
   s.tAvgOn = $('t-avg-on').checked;
-  s.tMax   = +$('t-max').value;
+  s.tMax   = unitToKmh($('t-max').value) ?? s.tMax;
   s.tMaxOn = $('t-max-on').checked;
   saveConfig();
 }
@@ -589,10 +661,11 @@ function loadStationPanel(s) {
   // Form fields
   $('owm-display').value    = s.name && s.id ? `${s.name} (${s.id})` : (s.id ? `Station ${s.id}` : '');
   $('station-name').value   = s.name;
-  $('t-avg').value          = s.tAvg;
+  $('t-avg').value          = fmtThresh(s.tAvg);   // convert km/h → display unit
   $('t-avg-on').checked     = s.tAvgOn;
-  $('t-max').value          = s.tMax;
+  $('t-max').value          = fmtThresh(s.tMax);
   $('t-max-on').checked     = s.tMaxOn;
+  updateUnitUI();
 
   // Wind display
   if (s.lastData) {
@@ -693,9 +766,10 @@ function updateUI(data) {
   const sid = data.id;
   $('owm-link').href        = `https://www.openwindmap.org/windbird-${sid}`;
   $('owm-link').textContent = `🗺 openwindmap.org/windbird-${sid}`;
-  $('w-avg').textContent    = fmt1(m.wind_speed_avg);
-  $('w-min').textContent    = fmt1(m.wind_speed_min);
-  $('w-max').textContent    = fmt1(m.wind_speed_max);
+  $('w-avg').textContent    = fmtWind(m.wind_speed_avg);
+  $('w-min').textContent    = fmtWind(m.wind_speed_min);
+  $('w-max').textContent    = fmtWind(m.wind_speed_max);
+  $('wind-unit').textContent = unitLabel();
   if (m.wind_heading != null) {
     const lbl = dirLabel(m.wind_heading);
     $('w-dir').textContent       = lbl;
@@ -773,9 +847,9 @@ function checkThresholds(idx, data) {
   const m       = data.measurements;
   const reasons = [];
   if (s.tAvgOn && m.wind_speed_avg != null && m.wind_speed_avg >= s.tAvg)
-    reasons.push(`Ø ${fmt1(m.wind_speed_avg)} km/h ≥ ${s.tAvg} km/h`);
+    reasons.push(`Ø ${fmtWind(m.wind_speed_avg)} ${unitLabel()} ≥ ${fmtThresh(s.tAvg)} ${unitLabel()}`);
   if (s.tMaxOn && m.wind_speed_max != null && m.wind_speed_max >= s.tMax)
-    reasons.push(`Böen ${fmt1(m.wind_speed_max)} km/h ≥ ${s.tMax} km/h`);
+    reasons.push(`Böen ${fmtWind(m.wind_speed_max)} ${unitLabel()} ≥ ${fmtThresh(s.tMax)} ${unitLabel()}`);
 
   s.status = reasons.length ? 'warn' : 'ok';
 
@@ -840,9 +914,9 @@ function renderChart(rows, hours) {
       ? d.toLocaleTimeString('de-CH', {hour:'2-digit', minute:'2-digit'})
       : d.toLocaleDateString('de-CH', {weekday:'short', hour:'2-digit', minute:'2-digit'});
   });
-  const minData = rows.map(r => r[3]);
-  const avgData = rows.map(r => r[4]);
-  const maxData = rows.map(r => r[5]);
+  const minData = rows.map(r => kmhToUnit(r[3]));
+  const avgData = rows.map(r => kmhToUnit(r[4]));
+  const maxData = rows.map(r => kmhToUnit(r[5]));
 
   if (windChart) windChart.destroy();
   windChart = new Chart($('wind-chart'), {
@@ -863,7 +937,10 @@ function renderChart(rows, hours) {
         tooltip:{
           backgroundColor:'#1e293b', borderColor:'#475569', borderWidth:1,
           titleColor:'#94a3b8', bodyColor:'#f1f5f9',
-          callbacks:{ label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y?.toFixed(1)} km/h` },
+          callbacks:{ label: ctx => {
+            const y = ctx.parsed.y;
+            return `${ctx.dataset.label}: ${y == null ? '–' : unit === 'bft' ? Math.round(y) : y.toFixed(1)} ${unitLabel()}`;
+          }},
         },
       },
       scales:{
@@ -1059,6 +1136,7 @@ function selectOWM(id, name) {
 
 // ── Init ───────────────────────────────────────────────────────────────────────
 loadConfig();
+updateUnitUI();
 renderTabs();
 loadStationPanel(stations[activeIdx]);
 if ('Notification' in window && Notification.permission === 'default' && $('n-notif').checked) {
