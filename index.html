@@ -34,6 +34,20 @@
     }
 
     /* ── z9nai byline ── */
+    .z9-brand-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+    .z9-brand-logo {
+      width: 36px; height: 36px;
+      transition: filter .2s;
+    }
+    .z9-brand-link:hover .z9-brand-logo {
+      filter: brightness(0) invert(1);
+    }
     .z9-byline {
       font-family: 'Courier New', Courier, monospace;
       font-size: .65rem;
@@ -43,6 +57,12 @@
       -webkit-text-fill-color: transparent;
       background-clip: text;
       margin-top: 1px;
+      transition: all .2s;
+    }
+    .z9-brand-link:hover .z9-byline {
+      background: none;
+      -webkit-text-fill-color: white;
+      color: white;
     }
 
     /* ── z9nai Footer ── */
@@ -339,13 +359,11 @@
 <!-- Header -->
 <div class="header">
   <div style="display:flex; align-items:center; gap:14px">
-    <a href="https://z9nai.ch" target="_blank" rel="noopener" style="display:flex; align-items:center; flex-shrink:0">
-      <img src="https://z9nai.ch/assets/logo_new-DwOlNuuy.png" alt="z9nai" style="width:36px; height:36px">
-    </a>
-    <div>
-      <h1>Wind Alert</h1>
+    <a href="https://z9nai.ch" target="_blank" rel="noopener" class="z9-brand-link">
+      <img src="https://z9nai.ch/assets/logo_new-DwOlNuuy.png" alt="z9nai" class="z9-brand-logo">
       <div class="z9-byline">by z9nai GmbH</div>
-    </div>
+    </a>
+    <h1>Wind Alert</h1>
   </div>
   <div class="header-right">
     <span id="countdown"></span>
