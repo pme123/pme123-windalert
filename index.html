@@ -441,41 +441,6 @@
     </div>
   </div>
 
-  <!-- OpenWeatherMap card (hidden until configured) -->
-  <div class="card span2" id="ow-card" style="display:none">
-    <div class="card-title" style="display:flex; justify-content:space-between; align-items:center">
-      <span style="display:flex; align-items:center; gap:8px">
-        <span class="src-dot" style="background:#fb923c"></span>
-        OpenWeatherMap · <span id="ow-name-lbl" style="color:var(--text)"></span>
-      </span>
-      <span id="ow-badge" class="badge badge-off" style="font-size:.65rem; padding:3px 8px">
-        <span class="dot"></span> –
-      </span>
-    </div>
-    <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px">
-      <div class="stat">
-        <div class="stat-lbl">Ø Wind</div>
-        <div class="stat-val" id="ow-avg">–</div>
-        <div style="font-size:.65rem; color:var(--muted); margin-top:2px">km/h</div>
-      </div>
-      <div class="stat">
-        <div class="stat-lbl">Böen</div>
-        <div class="stat-val" id="ow-gust" style="color:var(--orange)">–</div>
-        <div style="font-size:.65rem; color:var(--muted); margin-top:2px">km/h</div>
-      </div>
-      <div class="stat">
-        <div class="stat-lbl">Richtung</div>
-        <div class="stat-val" id="ow-dir">–</div>
-      </div>
-      <div class="stat">
-        <div class="stat-lbl">Temperatur</div>
-        <div class="stat-val" id="ow-temp">–</div>
-        <div style="font-size:.65rem; color:var(--muted); margin-top:2px">°C</div>
-      </div>
-    </div>
-    <div class="ts" id="ow-ts" style="margin-top:10px"></div>
-  </div>
-
   <!-- Thresholds -->
   <div class="card">
     <div class="card-title">Schwellenwerte</div>
@@ -587,10 +552,7 @@
 
   <!-- Station -->
   <div class="card span2">
-    <div class="card-title">Stationen</div>
-
-    <!-- OpenWindMap -->
-    <div class="src-label"><span class="src-dot"></span> OpenWindMap / Windbird</div>
+    <div class="card-title">Station</div>
     <div style="display:grid; grid-template-columns: 2fr 1fr auto; gap:12px; align-items:end">
       <div class="field" style="margin:0">
         <label>Station suchen</label>
@@ -617,46 +579,6 @@
       <button class="btn-primary" onclick="fetchNow()" style="white-space:nowrap">↺ Laden</button>
     </div>
 
-    <hr class="section-divider">
-
-    <!-- OpenWeatherMap -->
-    <div class="src-label"><span class="src-dot" style="background:#fb923c"></span> OpenWeatherMap</div>
-    <div style="display:grid; grid-template-columns: 2fr 1fr 1fr auto; gap:12px; align-items:end">
-      <div class="field" style="margin:0">
-        <label>Standort suchen</label>
-        <div class="search-wrap">
-          <div class="search-row">
-            <input type="text" id="ow-display" placeholder="Stadt oder Ort eingeben…" onclick="openOWDropdown()" oninput="searchOW(this.value)" autocomplete="off">
-            <button class="search-btn" onclick="geolocateOW()" title="Meinen Standort verwenden">📍</button>
-          </div>
-          <input type="hidden" id="ow-lat">
-          <input type="hidden" id="ow-lon">
-          <div class="dropdown" id="ow-dropdown">
-            <div class="dd-search">
-              <input type="text" id="ow-filter" placeholder="Stadt, Region, Land…" oninput="searchOW(this.value)" onkeydown="if(event.key==='Escape')closeAllDropdowns()">
-              <button class="btn-secondary" style="white-space:nowrap; padding:6px 10px; font-size:.75rem; flex-shrink:0" onclick="geolocateOW()">📍 Nearby</button>
-            </div>
-            <div class="dd-list" id="ow-list">
-              <div class="dd-empty">API Key eintragen, dann Stadt suchen</div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="field" style="margin:0">
-        <label>API Key</label>
-        <input type="text" id="ow-apikey" placeholder="Von openweathermap.org" onchange="saveConfig(); toggleOW()">
-      </div>
-      <div class="field" style="margin:0">
-        <label>Stationsname (optional)</label>
-        <input type="text" id="ow-name" placeholder="Automatisch" onchange="saveConfig()">
-      </div>
-      <button class="btn-secondary" onclick="fetchOWNow()" style="white-space:nowrap">↺ Laden</button>
-    </div>
-    <div class="infobox" style="margin-top:10px">
-      Kostenloser API Key (1000 Calls/Tag, kein PWS nötig) →
-      <a href="https://home.openweathermap.org/api_keys" target="_blank" rel="noopener">openweathermap.org/api_keys</a>
-      · Daten aus aggregierten Messstationen
-    </div>
   </div>
 
   <!-- Log -->
@@ -686,7 +608,6 @@ let cdTimer = null;
 let nextAt = null;
 let lastAlertAt = 0;
 let lastData = null;
-let activeSource = 'windbird'; // 'windbird' | 'owm'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
@@ -712,18 +633,11 @@ function loadConfig() {
     $('n-sound').checked    = c.nSound   ?? true;
     $('n-banner').checked   = c.nBanner  ?? true;
     $('n-notif').checked    = c.nNotif   ?? true;
-    $('ow-apikey').value    = c.owKey    ?? '';
-    $('ow-name').value      = c.owName   ?? '';
-    // restore hidden fields + display labels
+    // restore display label
     const owmId = c.sid ?? '2172';
     $('station-id').value  = owmId;
     $('owm-display').value = c.owmLabel ?? (owmId ? `Station ${owmId}` : '');
-    $('ow-lat').value      = c.owLat    ?? '';
-    $('ow-lon').value      = c.owLon    ?? '';
-    $('ow-display').value  = c.owLabel  ?? '';
-    activeSource           = c.activeSource ?? 'windbird';
   } catch(e) {}
-  setActiveSource(activeSource);
 }
 
 function saveConfig() {
@@ -742,13 +656,7 @@ function saveConfig() {
     nSound:  $('n-sound').checked,
     nBanner: $('n-banner').checked,
     nNotif:  $('n-notif').checked,
-    owKey:    $('ow-apikey').value,
-    owName:   $('ow-name').value,
-    owLabel:  $('ow-display').value,
-    owLat:    $('ow-lat').value,
-    owLon:    $('ow-lon').value,
-    owmLabel:     $('owm-display').value,
-    activeSource: activeSource,
+    owmLabel: $('owm-display').value,
   }));
 }
 
@@ -828,109 +736,10 @@ function selectOWM(id, name) {
   $('owm-display').value = `${name} (${id})`;
   $('station-name').placeholder = name;
   closeAllDropdowns();
-  setActiveSource('windbird');
+  saveConfig();
   fetchNow();
 }
 
-// ── OpenWeatherMap Search ─────────────────────────────────────────────────────
-const OW_GEO  = 'https://api.openweathermap.org/geo/1.0';
-const OW_API  = 'https://api.openweathermap.org/data/2.5/weather';
-let owTimer   = null;
-
-function openOWDropdown() {
-  closeAllDropdowns();
-  $('ow-dropdown').classList.add('open');
-  $('ow-filter').value = '';
-  $('ow-filter').focus();
-}
-
-function searchOW(q) {
-  $('ow-dropdown').classList.add('open');
-  clearTimeout(owTimer);
-  if (!q.trim()) return;
-  owTimer = setTimeout(() => runOWSearch(q), 400);
-}
-
-async function runOWSearch(q) {
-  const key = $('ow-apikey').value.trim();
-  if (!key) { $('ow-list').innerHTML = '<div class="dd-empty">Zuerst API Key eintragen</div>'; return; }
-  $('ow-list').innerHTML = '<div class="dd-empty">Suche…</div>';
-  try {
-    const r = await fetch(`${OW_GEO}/direct?q=${encodeURIComponent(q)}&limit=10&appid=${key}`);
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const locs = await r.json();
-    renderOWList(locs);
-  } catch(e) {
-    $('ow-list').innerHTML = `<div class="dd-empty">Fehler: ${e.message}</div>`;
-  }
-}
-
-async function geolocateOW() {
-  const key = $('ow-apikey').value.trim();
-  if (!key) { addLog('warn', 'OWM: API Key zuerst eintragen'); return; }
-  openOWDropdown();
-  $('ow-list').innerHTML = '<div class="dd-empty">📍 Standort wird ermittelt…</div>';
-  if (!navigator.geolocation) {
-    $('ow-list').innerHTML = '<div class="dd-empty">Geolocation nicht unterstützt</div>'; return;
-  }
-  navigator.geolocation.getCurrentPosition(async pos => {
-    const { latitude: lat, longitude: lon } = pos.coords;
-    try {
-      const r = await fetch(`${OW_GEO}/reverse?lat=${lat}&lon=${lon}&limit=8&appid=${key}`);
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const locs = await r.json();
-      renderOWList(locs);
-    } catch(e) {
-      $('ow-list').innerHTML = `<div class="dd-empty">Fehler: ${e.message}</div>`;
-    }
-  }, err => {
-    $('ow-list').innerHTML = `<div class="dd-empty">Standort verweigert – ${err.message}</div>`;
-  });
-}
-
-function renderOWList(locs) {
-  const el = $('ow-list');
-  if (!locs.length) { el.innerHTML = '<div class="dd-empty">Keine Orte gefunden</div>'; return; }
-  el.innerHTML = locs.map(l => {
-    const name  = l.local_names?.de || l.name;
-    const state = [l.state, l.country].filter(Boolean).join(', ');
-    return `<div class="dd-item" onclick="selectOW(${l.lat},${l.lon},'${name.replace(/'/g,"\\'")}','${state.replace(/'/g,"\\'")}')">
-      <div>
-        <div class="dd-name">${name}</div>
-        <div class="dd-sub">${state} · ${l.lat.toFixed(3)}°N ${l.lon.toFixed(3)}°O</div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function selectOW(lat, lon, name, state) {
-  $('ow-lat').value     = lat;
-  $('ow-lon').value     = lon;
-  $('ow-display').value = state ? `${name}, ${state}` : name;
-  $('ow-name').placeholder = name;
-  closeAllDropdowns();
-  setActiveSource('owm');
-  fetchOWNow();
-}
-
-// ── Source switching ──────────────────────────────────────────────────────────
-function setActiveSource(src) {
-  activeSource = src;
-  const isWindbird = src === 'windbird';
-  $('wind-card').style.display    = isWindbird ? '' : 'none';
-  $('compass-card').style.display = isWindbird ? '' : 'none';
-  $('ow-card').style.display      = isWindbird ? 'none' : '';
-  saveConfig();
-}
-
-// ── OWM helpers ───────────────────────────────────────────────────────────────
-function toggleOW() {
-  // only auto-show if OWM is already the active source
-  if (activeSource === 'owm') {
-    const active = $('ow-lat').value && $('ow-apikey').value.trim();
-    $('ow-card').style.display = active ? '' : 'none';
-  }
-}
 
 // ── Wind data ─────────────────────────────────────────────────────────────────
 async function fetchWindData(sid) {
@@ -981,87 +790,6 @@ function updateUI(data) {
   }
 }
 
-// ── OpenWeatherMap data ───────────────────────────────────────────────────────
-async function fetchOWData(lat, lon, key) {
-  const url = `${OW_API}?lat=${lat}&lon=${lon}&appid=${key}&units=metric`;
-  const r = await fetch(url);
-  if (!r.ok) throw new Error(`OWM HTTP ${r.status}`);
-  return r.json();
-}
-
-function updateOWCard(d) {
-  const ms2km = v => v != null ? (v * 3.6).toFixed(1) : '–';
-  const sname = $('ow-name').value || d.name || 'OpenWeatherMap';
-  $('ow-name-lbl').textContent = sname;
-  // update header
-  const lat = d.coord?.lat?.toFixed(3);
-  const lon = d.coord?.lon?.toFixed(3);
-  $('subtitle').textContent = sname + (lat ? ` · ${lat}° N, ${lon}° O` : '');
-  $('owm-link').href = `https://openweathermap.org/city/${d.id}`;
-  $('owm-link').textContent = `🌤 openweathermap.org`;
-  $('ow-avg').textContent  = ms2km(d.wind?.speed);
-  $('ow-gust').textContent = d.wind?.gust != null ? ms2km(d.wind.gust) : '–';
-  $('ow-dir').textContent  = d.wind?.deg  != null ? dirLabel(d.wind.deg) : '–';
-  $('ow-temp').textContent = d.main?.temp != null ? d.main.temp.toFixed(1) : '–';
-
-  if (d.dt) {
-    const t = new Date(d.dt * 1000);
-    const age = Math.round((Date.now() - t) / 60000);
-    $('ow-ts').textContent = `📡 Sensor: ${t.toLocaleTimeString('de-CH',{hour:'2-digit',minute:'2-digit'})} (${age < 2 ? 'gerade eben' : 'vor ' + age + ' Min'})`;
-  }
-  const ob = $('ow-badge');
-  ob.className = 'badge badge-ok';
-  ob.innerHTML = '<span class="dot"></span> Live';
-}
-
-function checkThresholdsOW(d) {
-  const ms2km = v => v * 3.6;
-  const reasons = [];
-  const sname = $('ow-name').value || d.name || 'OpenWeatherMap';
-  const avg  = d.wind?.speed != null ? ms2km(d.wind.speed) : null;
-  const gust = d.wind?.gust  != null ? ms2km(d.wind.gust)  : null;
-
-  if ($('t-avg-on').checked && avg  != null && avg  >= +$('t-avg').value)
-    reasons.push(`OWM Ø ${avg.toFixed(1)} km/h ≥ ${$('t-avg').value} km/h`);
-  if ($('t-max-on').checked && gust != null && gust >= +$('t-max').value)
-    reasons.push(`OWM Böen ${gust.toFixed(1)} km/h ≥ ${$('t-max').value} km/h`);
-
-  if (!reasons.length) return;
-  const now = Date.now();
-  const cdMs = +$('cooldown').value * 60000;
-  if (now - lastAlertAt < cdMs) {
-    addLog('info', `OWM Threshold – Pause aktiv (noch ${Math.round((cdMs-(now-lastAlertAt))/60000)} min)`);
-    return;
-  }
-  lastAlertAt = now;
-  const dir = d.wind?.deg;
-  const msg = `⚠️ Wind Alert (OWM): ${sname}\n${reasons.join(', ')}\nRichtung: ${dir != null ? dirLabel(dir)+'('+dir+'°)' : '–'}\n${new Date().toLocaleString('de-CH')}`;
-  addLog('alert', `ALERT (OWM): ${reasons.join(' | ')}`);
-  sendWhatsApp(msg);
-  if ($('n-notif').checked)  showBrowserNotif(sname, reasons.join(', '));
-  if ($('n-banner').checked) showBanner(reasons.join(' | '));
-  if ($('n-sound').checked)  playAlertSound();
-  if ($('n-dialog').checked) setTimeout(() => alert(`⚠️ Wind Alert OWM: ${sname}\n\n${reasons.join('\n')}`), 100);
-}
-
-async function fetchOWNow() {
-  const lat = $('ow-lat').value;
-  const lon = $('ow-lon').value;
-  const key = $('ow-apikey').value.trim();
-  if (!lat || !lon || !key) { addLog('warn', 'OWM: Standort und API Key benötigt'); return; }
-  try {
-    const d = await fetchOWData(lat, lon, key);
-    updateOWCard(d);
-    checkThresholdsOW(d);
-    const avg  = d.wind?.speed != null ? (d.wind.speed * 3.6).toFixed(1) : '–';
-    const gust = d.wind?.gust  != null ? (d.wind.gust  * 3.6).toFixed(1) : '–';
-    addLog('ok', `OWM ${d.name}: Ø ${avg} km/h, Böen ${gust} km/h`);
-  } catch(e) {
-    addLog('alert', `OWM Fehler: ${e.message}`);
-    $('ow-badge').className = 'badge badge-err';
-    $('ow-badge').innerHTML = '<span class="dot"></span> Fehler';
-  }
-}
 
 // ── Threshold check ───────────────────────────────────────────────────────────
 function checkThresholds(data) {
@@ -1200,34 +928,17 @@ function clearLog() {
 // ── Polling ───────────────────────────────────────────────────────────────────
 async function fetchNow() {
   const sid = $('station-id').value.trim();
-
-  // run both in parallel
-  const tasks = [];
-
-  if (activeSource === 'windbird' && sid) tasks.push(
-    fetchWindData(sid)
-      .then(json => { lastData = json.data; updateUI(lastData); checkThresholds(lastData); })
-      .catch(e => {
-        addLog('alert', `Windbird Fehler: ${e.message}`);
-        $('badge').className = 'badge badge-err';
-        $('badge').innerHTML = '<span class="dot"></span> Fehler';
-      })
-  );
-
-  const owLat = $('ow-lat').value;
-  const owLon = $('ow-lon').value;
-  const owKey = $('ow-apikey').value.trim();
-  if (activeSource === 'owm' && owLat && owLon && owKey) tasks.push(
-    fetchOWData(owLat, owLon, owKey)
-      .then(d => { updateOWCard(d); checkThresholdsOW(d); })
-      .catch(e => {
-        addLog('alert', `OWM Fehler: ${e.message}`);
-        $('ow-badge').className = 'badge badge-err';
-        $('ow-badge').innerHTML = '<span class="dot"></span> Fehler';
-      })
-  );
-
-  await Promise.all(tasks);
+  if (!sid) { addLog('warn', 'Keine Station-ID angegeben'); return; }
+  try {
+    const json = await fetchWindData(sid);
+    lastData = json.data;
+    updateUI(lastData);
+    checkThresholds(lastData);
+  } catch(e) {
+    addLog('alert', `Ladefehler: ${e.message}`);
+    $('badge').className = 'badge badge-err';
+    $('badge').innerHTML = '<span class="dot"></span> Fehler';
+  }
 }
 
 function restartPolling() {
