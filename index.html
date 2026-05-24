@@ -317,7 +317,7 @@
     .log-entry.alert { border-color: var(--red); }
 
     /* ── Info box ── */
-    .info-icon { position:relative; display:inline-flex; align-items:center; justify-content:center; width:17px; height:17px; border-radius:50%; background:rgba(255,255,255,.12); color:#94a3b8; font-size:.72rem; font-style:normal; cursor:help; user-select:none; margin-left:7px; flex-shrink:0; vertical-align:middle; }
+    .info-icon { position:relative; display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:rgba(255,255,255,.12); color:#94a3b8; font-size:.85rem; font-style:normal; cursor:help; user-select:none; flex-shrink:0; }
     .info-tooltip { display:none; position:absolute; bottom:calc(100% + 10px); left:50%; transform:translateX(-50%); width:290px; background:#1e293b; border:1px solid rgba(255,255,255,.12); border-radius:10px; padding:13px 15px; font-size:.76rem; color:#cbd5e1; line-height:1.6; z-index:200; box-shadow:0 10px 30px rgba(0,0,0,.5); pointer-events:none; }
     .info-tooltip::after { content:''; position:absolute; top:100%; left:50%; transform:translateX(-50%); border:6px solid transparent; border-top-color:#1e293b; }
     .info-icon:hover .info-tooltip, .info-icon:focus .info-tooltip { display:block; }
@@ -523,8 +523,8 @@
 
   <!-- WhatsApp -->
   <div class="bottom-card">
-    <div class="card-title" style="display:flex;align-items:center">
-      WhatsApp Alert
+    <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <span>WhatsApp Alert</span>
       <span class="info-icon" tabindex="0">ⓘ
         <div class="info-tooltip">
           <strong>Einrichtung (einmalig)</strong><br>
