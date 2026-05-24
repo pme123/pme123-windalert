@@ -441,43 +441,39 @@
     </div>
   </div>
 
-  <!-- Weather Underground card (hidden until configured) -->
-  <div class="card span2" id="wu-card" style="display:none">
+  <!-- OpenWeatherMap card (hidden until configured) -->
+  <div class="card span2" id="ow-card" style="display:none">
     <div class="card-title" style="display:flex; justify-content:space-between; align-items:center">
       <span style="display:flex; align-items:center; gap:8px">
-        <span class="src-dot wu"></span>
-        Weather Underground · <span id="wu-name-lbl" style="color:var(--text)"></span>
+        <span class="src-dot" style="background:#fb923c"></span>
+        OpenWeatherMap · <span id="ow-name-lbl" style="color:var(--text)"></span>
       </span>
-      <a id="wu-link" href="https://www.wunderground.com/wundermap" target="_blank" rel="noopener"
-         style="font-size:.7rem; color:#c084fc; text-decoration:none">🗺 wunderground.com</a>
+      <span id="ow-badge" class="badge badge-off" style="font-size:.65rem; padding:3px 8px">
+        <span class="dot"></span> –
+      </span>
     </div>
     <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px">
       <div class="stat">
         <div class="stat-lbl">Ø Wind</div>
-        <div class="stat-val" id="wu-avg">–</div>
+        <div class="stat-val" id="ow-avg">–</div>
         <div style="font-size:.65rem; color:var(--muted); margin-top:2px">km/h</div>
       </div>
       <div class="stat">
         <div class="stat-lbl">Böen</div>
-        <div class="stat-val" id="wu-gust" style="color:var(--orange)">–</div>
+        <div class="stat-val" id="ow-gust" style="color:var(--orange)">–</div>
         <div style="font-size:.65rem; color:var(--muted); margin-top:2px">km/h</div>
       </div>
       <div class="stat">
         <div class="stat-lbl">Richtung</div>
-        <div class="stat-val" id="wu-dir">–</div>
+        <div class="stat-val" id="ow-dir">–</div>
       </div>
       <div class="stat">
         <div class="stat-lbl">Temperatur</div>
-        <div class="stat-val" id="wu-temp">–</div>
+        <div class="stat-val" id="ow-temp">–</div>
         <div style="font-size:.65rem; color:var(--muted); margin-top:2px">°C</div>
       </div>
     </div>
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px">
-      <span class="ts" id="wu-ts"></span>
-      <span id="wu-badge" class="badge badge-off" style="font-size:.65rem; padding:3px 8px">
-        <span class="dot"></span> –
-      </span>
-    </div>
+    <div class="ts" id="ow-ts" style="margin-top:10px"></div>
   </div>
 
   <!-- Thresholds -->
@@ -623,41 +619,43 @@
 
     <hr class="section-divider">
 
-    <!-- Weather Underground -->
-    <div class="src-label"><span class="src-dot wu"></span> Weather Underground</div>
+    <!-- OpenWeatherMap -->
+    <div class="src-label"><span class="src-dot" style="background:#fb923c"></span> OpenWeatherMap</div>
     <div style="display:grid; grid-template-columns: 2fr 1fr 1fr auto; gap:12px; align-items:end">
       <div class="field" style="margin:0">
-        <label>Station suchen</label>
+        <label>Standort suchen</label>
         <div class="search-wrap">
           <div class="search-row">
-            <input type="text" id="wu-display" placeholder="API Key eingeben, dann suchen…" onclick="openWUDropdown()" oninput="filterWU(this.value)" autocomplete="off">
-            <button class="search-btn" onclick="openWUDropdown()" title="Stationen suchen">🔍</button>
+            <input type="text" id="ow-display" placeholder="Stadt oder Ort eingeben…" onclick="openOWDropdown()" oninput="searchOW(this.value)" autocomplete="off">
+            <button class="search-btn" onclick="geolocateOW()" title="Meinen Standort verwenden">📍</button>
           </div>
-          <input type="hidden" id="wu-sid">
-          <div class="dropdown" id="wu-dropdown">
+          <input type="hidden" id="ow-lat">
+          <input type="hidden" id="ow-lon">
+          <div class="dropdown" id="ow-dropdown">
             <div class="dd-search">
-              <input type="text" id="wu-filter" placeholder="Station ID oder Name…" oninput="filterWU(this.value)" onkeydown="if(event.key==='Escape')closeAllDropdowns()">
-              <button class="btn-secondary" style="white-space:nowrap; padding:6px 10px; font-size:.75rem; flex-shrink:0" onclick="searchWUNearby()">📍 Nearby</button>
+              <input type="text" id="ow-filter" placeholder="Stadt, Region, Land…" oninput="searchOW(this.value)" onkeydown="if(event.key==='Escape')closeAllDropdowns()">
+              <button class="btn-secondary" style="white-space:nowrap; padding:6px 10px; font-size:.75rem; flex-shrink:0" onclick="geolocateOW()">📍 Nearby</button>
             </div>
-            <div class="dd-list" id="wu-list">
-              <div class="dd-empty">API Key eintragen → 📍 Nearby klicken</div>
+            <div class="dd-list" id="ow-list">
+              <div class="dd-empty">API Key eintragen, dann Stadt suchen</div>
             </div>
           </div>
         </div>
       </div>
       <div class="field" style="margin:0">
         <label>API Key</label>
-        <input type="text" id="wu-apikey" placeholder="Von wunderground.com" onchange="saveConfig(); toggleWU()">
+        <input type="text" id="ow-apikey" placeholder="Von openweathermap.org" onchange="saveConfig(); toggleOW()">
       </div>
       <div class="field" style="margin:0">
         <label>Stationsname (optional)</label>
-        <input type="text" id="wu-name" placeholder="Automatisch" onchange="saveConfig()">
+        <input type="text" id="ow-name" placeholder="Automatisch" onchange="saveConfig()">
       </div>
-      <button class="btn-secondary" onclick="fetchWUNow()" style="white-space:nowrap">↺ Laden</button>
+      <button class="btn-secondary" onclick="fetchOWNow()" style="white-space:nowrap">↺ Laden</button>
     </div>
     <div class="infobox" style="margin-top:10px">
-      API Key kostenlos (1500 Calls/Tag) →
-      <a href="https://www.wunderground.com/member/api-keys" target="_blank" rel="noopener">wunderground.com/member/api-keys</a>
+      Kostenloser API Key (1000 Calls/Tag, kein PWS nötig) →
+      <a href="https://home.openweathermap.org/api_keys" target="_blank" rel="noopener">openweathermap.org/api_keys</a>
+      · Daten aus aggregierten Messstationen
     </div>
   </div>
 
@@ -713,17 +711,17 @@ function loadConfig() {
     $('n-sound').checked    = c.nSound   ?? true;
     $('n-banner').checked   = c.nBanner  ?? true;
     $('n-notif').checked    = c.nNotif   ?? true;
-    $('wu-apikey').value    = c.wuKey    ?? '';
-    $('wu-name').value      = c.wuName   ?? '';
+    $('ow-apikey').value    = c.owKey    ?? '';
+    $('ow-name').value      = c.owName   ?? '';
     // restore hidden fields + display labels
     const owmId = c.sid ?? '2172';
-    $('station-id').value = owmId;
+    $('station-id').value  = owmId;
     $('owm-display').value = c.owmLabel ?? (owmId ? `Station ${owmId}` : '');
-    const wuId = c.wuSid ?? '';
-    $('wu-sid').value = wuId;
-    $('wu-display').value = c.wuLabel ?? (wuId ? wuId : '');
+    $('ow-lat').value      = c.owLat    ?? '';
+    $('ow-lon').value      = c.owLon    ?? '';
+    $('ow-display').value  = c.owLabel  ?? '';
   } catch(e) {}
-  toggleWU();
+  toggleOW();
 }
 
 function saveConfig() {
@@ -742,10 +740,11 @@ function saveConfig() {
     nSound:  $('n-sound').checked,
     nBanner: $('n-banner').checked,
     nNotif:  $('n-notif').checked,
-    wuSid:    $('wu-sid').value,
-    wuKey:    $('wu-apikey').value,
-    wuName:   $('wu-name').value,
-    wuLabel:  $('wu-display').value,
+    owKey:    $('ow-apikey').value,
+    owName:   $('ow-name').value,
+    owLabel:  $('ow-display').value,
+    owLat:    $('ow-lat').value,
+    owLon:    $('ow-lon').value,
     owmLabel: $('owm-display').value,
   }));
 }
@@ -830,86 +829,92 @@ function selectOWM(id, name) {
   fetchNow();
 }
 
-// ── WU Station Search ─────────────────────────────────────────────────────────
-let wuStations = [];
+// ── OpenWeatherMap Search ─────────────────────────────────────────────────────
+const OW_GEO  = 'https://api.openweathermap.org/geo/1.0';
+const OW_API  = 'https://api.openweathermap.org/data/2.5/weather';
+let owTimer   = null;
 
-function openWUDropdown() {
+function openOWDropdown() {
   closeAllDropdowns();
-  $('wu-dropdown').classList.add('open');
-  $('wu-filter').value = '';
-  $('wu-filter').focus();
-  if (wuStations.length) renderWUList(wuStations);
+  $('ow-dropdown').classList.add('open');
+  $('ow-filter').value = '';
+  $('ow-filter').focus();
 }
 
-async function searchWUNearby() {
-  const apiKey = $('wu-apikey').value.trim();
-  if (!apiKey) { addLog('warn', 'WU: API Key zuerst eintragen'); return; }
-  $('wu-list').innerHTML = '<div class="dd-empty">📍 Standort wird ermittelt…</div>';
+function searchOW(q) {
+  $('ow-dropdown').classList.add('open');
+  clearTimeout(owTimer);
+  if (!q.trim()) return;
+  owTimer = setTimeout(() => runOWSearch(q), 400);
+}
+
+async function runOWSearch(q) {
+  const key = $('ow-apikey').value.trim();
+  if (!key) { $('ow-list').innerHTML = '<div class="dd-empty">Zuerst API Key eintragen</div>'; return; }
+  $('ow-list').innerHTML = '<div class="dd-empty">Suche…</div>';
+  try {
+    const r = await fetch(`${OW_GEO}/direct?q=${encodeURIComponent(q)}&limit=10&appid=${key}`);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const locs = await r.json();
+    renderOWList(locs);
+  } catch(e) {
+    $('ow-list').innerHTML = `<div class="dd-empty">Fehler: ${e.message}</div>`;
+  }
+}
+
+async function geolocateOW() {
+  const key = $('ow-apikey').value.trim();
+  if (!key) { addLog('warn', 'OWM: API Key zuerst eintragen'); return; }
+  openOWDropdown();
+  $('ow-list').innerHTML = '<div class="dd-empty">📍 Standort wird ermittelt…</div>';
   if (!navigator.geolocation) {
-    $('wu-list').innerHTML = '<div class="dd-empty">Geolocation nicht unterstützt</div>'; return;
+    $('ow-list').innerHTML = '<div class="dd-empty">Geolocation nicht unterstützt</div>'; return;
   }
   navigator.geolocation.getCurrentPosition(async pos => {
-    const { latitude, longitude } = pos.coords;
-    $('wu-list').innerHTML = '<div class="dd-empty">Suche nahe Stationen…</div>';
+    const { latitude: lat, longitude: lon } = pos.coords;
     try {
-      const url = `https://api.weather.com/v2/pws/nearby?geocode=${latitude},${longitude}&limit=25&units=m&format=json&numericPrecision=decimal&apiKey=${encodeURIComponent(apiKey)}`;
-      const r = await fetch(url);
+      const r = await fetch(`${OW_GEO}/reverse?lat=${lat}&lon=${lon}&limit=8&appid=${key}`);
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const json = await r.json();
-      wuStations = json.stations || [];
-      addLog('info', `WU: ${wuStations.length} nahe Stationen gefunden`);
-      renderWUList(wuStations);
+      const locs = await r.json();
+      renderOWList(locs);
     } catch(e) {
-      $('wu-list').innerHTML = `<div class="dd-empty">Fehler: ${e.message}</div>`;
-      addLog('alert', `WU Nearby: ${e.message}`);
+      $('ow-list').innerHTML = `<div class="dd-empty">Fehler: ${e.message}</div>`;
     }
   }, err => {
-    $('wu-list').innerHTML = `<div class="dd-empty">Standort verweigert – ${err.message}</div>`;
+    $('ow-list').innerHTML = `<div class="dd-empty">Standort verweigert – ${err.message}</div>`;
   });
 }
 
-function filterWU(q) {
-  if (!wuStations.length) return;
-  q = q.toLowerCase().trim();
-  const filtered = q
-    ? wuStations.filter(s =>
-        (s.stationID||'').toLowerCase().includes(q) ||
-        (s.neighborhood||'').toLowerCase().includes(q))
-    : wuStations;
-  renderWUList(filtered);
-}
-
-function renderWUList(list) {
-  const el = $('wu-list');
-  if (!list.length) { el.innerHTML = '<div class="dd-empty">Keine Stationen gefunden</div>'; return; }
-  el.innerHTML = list.map(s => {
-    const wind = s.metric?.windSpeed;
-    const gust = s.metric?.windGust;
-    const dist = s.distanceKm != null ? `${s.distanceKm.toFixed(1)} km` : '';
-    return `<div class="dd-item" onclick="selectWU('${s.stationID}','${(s.neighborhood||'').replace(/'/g,"\\'")}')">
+function renderOWList(locs) {
+  const el = $('ow-list');
+  if (!locs.length) { el.innerHTML = '<div class="dd-empty">Keine Orte gefunden</div>'; return; }
+  el.innerHTML = locs.map(l => {
+    const name  = l.local_names?.de || l.name;
+    const state = [l.state, l.country].filter(Boolean).join(', ');
+    return `<div class="dd-item" onclick="selectOW(${l.lat},${l.lon},'${name.replace(/'/g,"\\'")}','${state.replace(/'/g,"\\'")}')">
       <div>
-        <div class="dd-name">${s.neighborhood || s.stationID}</div>
-        <div class="dd-sub">${s.stationID}${dist ? ' · ' + dist + ' entfernt' : ''}</div>
+        <div class="dd-name">${name}</div>
+        <div class="dd-sub">${state} · ${l.lat.toFixed(3)}°N ${l.lon.toFixed(3)}°O</div>
       </div>
-      <div class="dd-wind">${wind != null ? wind.toFixed(1) : '–'} <span style="font-size:.68rem;color:var(--muted)">/ ${gust != null ? gust.toFixed(1) : '–'} km/h</span></div>
     </div>`;
   }).join('');
 }
 
-function selectWU(id, name) {
-  $('wu-sid').value     = id;
-  $('wu-display').value = name ? `${name} (${id})` : id;
-  if (name) $('wu-name').placeholder = name;
+function selectOW(lat, lon, name, state) {
+  $('ow-lat').value     = lat;
+  $('ow-lon').value     = lon;
+  $('ow-display').value = state ? `${name}, ${state}` : name;
+  $('ow-name').placeholder = name;
   closeAllDropdowns();
   saveConfig();
-  toggleWU();
-  fetchWUNow();
+  toggleOW();
+  fetchOWNow();
 }
 
-// ── WU helpers ────────────────────────────────────────────────────────────────
-function toggleWU() {
-  const active = $('wu-sid').value.trim() && $('wu-apikey').value.trim();
-  $('wu-card').style.display = active ? '' : 'none';
+// ── OWM helpers ───────────────────────────────────────────────────────────────
+function toggleOW() {
+  const active = $('ow-lat').value && $('ow-apikey').value.trim();
+  $('ow-card').style.display = active ? '' : 'none';
 }
 
 // ── Wind data ─────────────────────────────────────────────────────────────────
@@ -961,90 +966,79 @@ function updateUI(data) {
   }
 }
 
-// ── Weather Underground ───────────────────────────────────────────────────────
-const WU_API = 'https://api.weather.com/v2/pws/observations/current';
-
-async function fetchWUData(sid, apiKey) {
-  const url = `${WU_API}?stationId=${encodeURIComponent(sid)}&format=json&units=m&numericPrecision=decimal&apiKey=${encodeURIComponent(apiKey)}`;
+// ── OpenWeatherMap data ───────────────────────────────────────────────────────
+async function fetchOWData(lat, lon, key) {
+  const url = `${OW_API}?lat=${lat}&lon=${lon}&appid=${key}&units=metric`;
   const r = await fetch(url);
-  if (!r.ok) throw new Error(`WU HTTP ${r.status}`);
+  if (!r.ok) throw new Error(`OWM HTTP ${r.status}`);
   return r.json();
 }
 
-function updateWUCard(obs) {
-  const m = obs.metric;
-  const sname = $('wu-name').value || obs.neighborhood || obs.stationID;
-  $('wu-name-lbl').textContent = sname;
-  $('wu-link').href = `https://www.wunderground.com/dashboard/pws/${obs.stationID}`;
-  $('wu-link').textContent = `🗺 ${obs.stationID}`;
-  $('wu-avg').textContent  = m.windSpeed  != null ? m.windSpeed.toFixed(1)  : '–';
-  $('wu-gust').textContent = m.windGust   != null ? m.windGust.toFixed(1)   : '–';
-  $('wu-temp').textContent = m.temp       != null ? m.temp.toFixed(1)       : '–';
-  $('wu-dir').textContent  = obs.winddir  != null ? dirLabel(obs.winddir)   : '–';
+function updateOWCard(d) {
+  const ms2km = v => v != null ? (v * 3.6).toFixed(1) : '–';
+  const sname = $('ow-name').value || d.name || 'OpenWeatherMap';
+  $('ow-name-lbl').textContent = sname;
+  $('ow-avg').textContent  = ms2km(d.wind?.speed);
+  $('ow-gust').textContent = d.wind?.gust != null ? ms2km(d.wind.gust) : '–';
+  $('ow-dir').textContent  = d.wind?.deg  != null ? dirLabel(d.wind.deg) : '–';
+  $('ow-temp').textContent = d.main?.temp != null ? d.main.temp.toFixed(1) : '–';
 
-  if (obs.obsTimeUtc) {
-    const d = new Date(obs.obsTimeUtc);
-    const age = Math.round((Date.now() - d) / 60000);
-    const ageStr = age < 2 ? 'gerade eben' : `vor ${age} Min`;
-    $('wu-ts').textContent = `📡 Sensor: ${d.toLocaleTimeString('de-CH',{hour:'2-digit',minute:'2-digit'})} (${ageStr})`;
+  if (d.dt) {
+    const t = new Date(d.dt * 1000);
+    const age = Math.round((Date.now() - t) / 60000);
+    $('ow-ts').textContent = `📡 Sensor: ${t.toLocaleTimeString('de-CH',{hour:'2-digit',minute:'2-digit'})} (${age < 2 ? 'gerade eben' : 'vor ' + age + ' Min'})`;
   }
-
-  const wb = $('wu-badge');
-  wb.className = 'badge badge-ok';
-  wb.innerHTML = '<span class="dot"></span> Live';
-
-  if (!$('wu-name').value && obs.neighborhood) {
-    $('wu-name').placeholder = obs.neighborhood;
-  }
+  const ob = $('ow-badge');
+  ob.className = 'badge badge-ok';
+  ob.innerHTML = '<span class="dot"></span> Live';
 }
 
-function checkThresholdsWU(obs) {
-  const m = obs.metric;
+function checkThresholdsOW(d) {
+  const ms2km = v => v * 3.6;
   const reasons = [];
-  const sname = $('wu-name').value || obs.neighborhood || obs.stationID;
+  const sname = $('ow-name').value || d.name || 'OpenWeatherMap';
+  const avg  = d.wind?.speed != null ? ms2km(d.wind.speed) : null;
+  const gust = d.wind?.gust  != null ? ms2km(d.wind.gust)  : null;
 
-  if ($('t-avg-on').checked && m.windSpeed != null && m.windSpeed >= +$('t-avg').value)
-    reasons.push(`WU Ø ${m.windSpeed.toFixed(1)} km/h ≥ ${$('t-avg').value} km/h`);
-  if ($('t-max-on').checked && m.windGust  != null && m.windGust  >= +$('t-max').value)
-    reasons.push(`WU Böen ${m.windGust.toFixed(1)} km/h ≥ ${$('t-max').value} km/h`);
+  if ($('t-avg-on').checked && avg  != null && avg  >= +$('t-avg').value)
+    reasons.push(`OWM Ø ${avg.toFixed(1)} km/h ≥ ${$('t-avg').value} km/h`);
+  if ($('t-max-on').checked && gust != null && gust >= +$('t-max').value)
+    reasons.push(`OWM Böen ${gust.toFixed(1)} km/h ≥ ${$('t-max').value} km/h`);
 
   if (!reasons.length) return;
-
   const now = Date.now();
   const cdMs = +$('cooldown').value * 60000;
   if (now - lastAlertAt < cdMs) {
-    const rem = Math.round((cdMs - (now - lastAlertAt)) / 60000);
-    addLog('info', `WU Threshold – Pause aktiv (noch ${rem} min)`);
+    addLog('info', `OWM Threshold – Pause aktiv (noch ${Math.round((cdMs-(now-lastAlertAt))/60000)} min)`);
     return;
   }
   lastAlertAt = now;
-
-  const dir = obs.winddir;
-  const msg = `⚠️ Wind Alert (WU): ${sname}\n${reasons.join(', ')}\nRichtung: ${dir != null ? dirLabel(dir) + ' (' + dir + '°)' : '–'}\n${new Date().toLocaleString('de-CH')}`;
-  addLog('alert', `ALERT (WU): ${reasons.join(' | ')}`);
+  const dir = d.wind?.deg;
+  const msg = `⚠️ Wind Alert (OWM): ${sname}\n${reasons.join(', ')}\nRichtung: ${dir != null ? dirLabel(dir)+'('+dir+'°)' : '–'}\n${new Date().toLocaleString('de-CH')}`;
+  addLog('alert', `ALERT (OWM): ${reasons.join(' | ')}`);
   sendWhatsApp(msg);
   if ($('n-notif').checked)  showBrowserNotif(sname, reasons.join(', '));
   if ($('n-banner').checked) showBanner(reasons.join(' | '));
   if ($('n-sound').checked)  playAlertSound();
-  if ($('n-dialog').checked) setTimeout(() => alert(`⚠️ Wind Alert WU: ${sname}\n\n${reasons.join('\n')}`), 100);
+  if ($('n-dialog').checked) setTimeout(() => alert(`⚠️ Wind Alert OWM: ${sname}\n\n${reasons.join('\n')}`), 100);
 }
 
-async function fetchWUNow() {
-  const sid    = $('wu-sid').value.trim();
-  const apiKey = $('wu-apikey').value.trim();
-  if (!sid || !apiKey) { addLog('warn', 'WU: Station ID und API Key benötigt'); return; }
+async function fetchOWNow() {
+  const lat = $('ow-lat').value;
+  const lon = $('ow-lon').value;
+  const key = $('ow-apikey').value.trim();
+  if (!lat || !lon || !key) { addLog('warn', 'OWM: Standort und API Key benötigt'); return; }
   try {
-    const json = await fetchWUData(sid, apiKey);
-    const obs = json.observations?.[0];
-    if (!obs) throw new Error('Keine Messung in Antwort');
-    updateWUCard(obs);
-    checkThresholdsWU(obs);
-    addLog('ok', `WU ${sid}: Ø ${obs.metric.windSpeed?.toFixed(1)} km/h, Böen ${obs.metric.windGust?.toFixed(1)} km/h`);
+    const d = await fetchOWData(lat, lon, key);
+    updateOWCard(d);
+    checkThresholdsOW(d);
+    const avg  = d.wind?.speed != null ? (d.wind.speed * 3.6).toFixed(1) : '–';
+    const gust = d.wind?.gust  != null ? (d.wind.gust  * 3.6).toFixed(1) : '–';
+    addLog('ok', `OWM ${d.name}: Ø ${avg} km/h, Böen ${gust} km/h`);
   } catch(e) {
-    addLog('alert', `WU Fehler: ${e.message}`);
-    const wb = $('wu-badge');
-    wb.className = 'badge badge-err';
-    wb.innerHTML = '<span class="dot"></span> Fehler';
+    addLog('alert', `OWM Fehler: ${e.message}`);
+    $('ow-badge').className = 'badge badge-err';
+    $('ow-badge').innerHTML = '<span class="dot"></span> Fehler';
   }
 }
 
@@ -1185,8 +1179,6 @@ function clearLog() {
 // ── Polling ───────────────────────────────────────────────────────────────────
 async function fetchNow() {
   const sid = $('station-id').value.trim();
-  const wuSid = $('wu-sid').value.trim();
-  const wuKey = $('wu-apikey').value.trim();
 
   // run both in parallel
   const tasks = [];
@@ -1201,16 +1193,16 @@ async function fetchNow() {
       })
   );
 
-  if (wuSid && wuKey) tasks.push(
-    fetchWUData(wuSid, wuKey)
-      .then(json => {
-        const obs = json.observations?.[0];
-        if (obs) { updateWUCard(obs); checkThresholdsWU(obs); }
-      })
+  const owLat = $('ow-lat').value;
+  const owLon = $('ow-lon').value;
+  const owKey = $('ow-apikey').value.trim();
+  if (owLat && owLon && owKey) tasks.push(
+    fetchOWData(owLat, owLon, owKey)
+      .then(d => { updateOWCard(d); checkThresholdsOW(d); })
       .catch(e => {
-        addLog('alert', `WU Fehler: ${e.message}`);
-        $('wu-badge').className = 'badge badge-err';
-        $('wu-badge').innerHTML = '<span class="dot"></span> Fehler';
+        addLog('alert', `OWM Fehler: ${e.message}`);
+        $('ow-badge').className = 'badge badge-err';
+        $('ow-badge').innerHTML = '<span class="dot"></span> Fehler';
       })
   );
 
