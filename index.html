@@ -668,7 +668,8 @@ function loadConfig() {
     const old = JSON.parse(localStorage.getItem('waCfg')  || '{}'); // migrate from v1
 
     stations = (c.stations && c.stations.length)
-      ? c.stations.map(s => ({ ...makeStation(), ...s, lastData: null, lastAlertAt: 0, chartRows: null }))
+      ? c.stations.map(s => ({ ...makeStation(), ...s, lastData: null, chartRows: null }))
+      // ↑ lastAlertAt is restored from saved s.lastAlertAt (not reset to 0) to survive page reloads
       : [makeStation(old.sid ?? '2172', old.sname ?? 'Schiberenegg')];
     activeIdx = Math.min(+(c.activeIdx ?? 0), stations.length - 1);
 
@@ -703,7 +704,7 @@ function loadConfig() {
 
 function saveConfig() {
   localStorage.setItem('waCfg2', JSON.stringify({
-    stations: stations.map(({id, name, tAvg, tAvgOn, tMax, tMaxOn}) => ({id, name, tAvg, tAvgOn, tMax, tMaxOn})),
+    stations: stations.map(({id, name, tAvg, tAvgOn, tMax, tMaxOn, lastAlertAt}) => ({id, name, tAvg, tAvgOn, tMax, tMaxOn, lastAlertAt})),
     activeIdx,
     phone:   $('wa-phone').value,
     key:     $('wa-key').value,
@@ -961,6 +962,7 @@ function checkThresholds(idx, data) {
     return;
   }
   s.lastAlertAt = now;
+  saveConfig();   // persist cooldown timestamp so page reloads don't retrigger
 
   const sname = s.name || data.meta?.name || `Station ${data.id}`;
   const dir   = m.wind_heading;
@@ -1044,7 +1046,7 @@ function renderChart(rows, hours) {
 }
 
 // ── Notifications ──────────────────────────────────────────────────────────────
-async function sendWhatsApp(text, attempt = 1) {
+async function sendWhatsApp(text) {
   const phone = $('wa-phone').value.trim();
   const key   = $('wa-key').value.trim();
   if (!phone || !key) {
@@ -1053,33 +1055,11 @@ async function sendWhatsApp(text, attempt = 1) {
   }
   const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(text)}&apikey=${encodeURIComponent(key)}`;
   try {
-    // Try with full CORS first so we can read the HTTP status code
-    const r = await fetch(url);
-    if (r.status === 503 || r.status === 502 || r.status === 429) {
-      // Server overloaded – retry up to 3× with back-off
-      if (attempt <= 3) {
-        const wait = attempt * 10;
-        addLog('warn', `WhatsApp Server ${r.status} – Retry ${attempt}/3 in ${wait}s…`);
-        setTimeout(() => sendWhatsApp(text, attempt + 1), wait * 1000);
-      } else {
-        addLog('alert', `WhatsApp Fehler: Server ${r.status} nach 3 Versuchen`);
-      }
-      return;
-    }
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    // CallMeBot does not send CORS headers → must use no-cors (response is opaque)
+    await fetch(url, { mode: 'no-cors' });
     addLog('ok', `WhatsApp gesendet an +${phone}`);
   } catch(e) {
-    if (e.message.includes('CORS') || e.message.includes('Failed to fetch') || e.name === 'TypeError') {
-      // CORS blocked – fall back to no-cors beacon (fire-and-forget)
-      try {
-        await fetch(url, {mode: 'no-cors'});
-        addLog('ok', `WhatsApp gesendet an +${phone} (kein Status lesbar)`);
-      } catch(e2) {
-        addLog('alert', `WhatsApp Fehler: ${e2.message}`);
-      }
-    } else {
-      addLog('alert', `WhatsApp Fehler: ${e.message}`);
-    }
+    addLog('alert', `WhatsApp Fehler: ${e.message}`);
   }
 }
 
