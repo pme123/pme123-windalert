@@ -317,9 +317,13 @@
     .log-entry.alert { border-color: var(--red); }
 
     /* ── Info box ── */
-    .infobox { background: rgba(56,189,248,.07); border: 1px solid rgba(56,189,248,.2); border-radius: 8px; padding: 12px; font-size: .74rem; color: var(--muted); line-height: 1.7; margin-top: 10px; }
-    .infobox a { color: var(--accent); }
-    .infobox strong { color: var(--text); }
+    .info-icon { position:relative; display:inline-flex; align-items:center; justify-content:center; width:17px; height:17px; border-radius:50%; background:rgba(255,255,255,.12); color:#94a3b8; font-size:.72rem; font-style:normal; cursor:help; user-select:none; margin-left:7px; flex-shrink:0; vertical-align:middle; }
+    .info-tooltip { display:none; position:absolute; bottom:calc(100% + 10px); left:50%; transform:translateX(-50%); width:290px; background:#1e293b; border:1px solid rgba(255,255,255,.12); border-radius:10px; padding:13px 15px; font-size:.76rem; color:#cbd5e1; line-height:1.6; z-index:200; box-shadow:0 10px 30px rgba(0,0,0,.5); pointer-events:none; }
+    .info-tooltip::after { content:''; position:absolute; top:100%; left:50%; transform:translateX(-50%); border:6px solid transparent; border-top-color:#1e293b; }
+    .info-icon:hover .info-tooltip, .info-icon:focus .info-tooltip { display:block; }
+    .info-tooltip strong { color:#e2e8f0; }
+    .info-tooltip a { color:#38bdf8; }
+    .info-tooltip hr { border:none; border-top:1px solid rgba(255,255,255,.1); margin:8px 0; }
 
     /* ── Alert banner ── */
     #alert-banner {
@@ -519,7 +523,23 @@
 
   <!-- WhatsApp -->
   <div class="bottom-card">
-    <div class="card-title">WhatsApp Alert</div>
+    <div class="card-title" style="display:flex;align-items:center">
+      WhatsApp Alert
+      <span class="info-icon" tabindex="0">ⓘ
+        <div class="info-tooltip">
+          <strong>Einrichtung (einmalig)</strong><br>
+          1. Nummer <strong>+34 644 97 79 48</strong> als „CallMeBot" speichern<br>
+          2. Nachricht senden: <em>I allow callmebot to send me messages</em><br>
+          3. API Key empfangen &amp; oben eintragen<br>
+          <a href="https://www.callmebot.com/blog/free-api-whatsapp-messages/" target="_blank" rel="noopener">→ callmebot.com Anleitung</a>
+          <hr>
+          <strong>Rate Limit</strong><br>
+          CallMeBot erlaubt max. <strong>16 Nachrichten pro 240 Min.</strong> Bei Überschreitung werden Nachrichten in eine Warteschlange gestellt (HTTP 210) und verzögert zugestellt.<br>
+          → Empfehlung: Cooldown ≥ 60 Min. setzen<br>
+          → Bei Problemen: erneut <em>I allow callmebot to send me messages</em> senden
+        </div>
+      </span>
+    </div>
     <div class="field">
       <label>Telefonnummer (mit Ländervorwahl, ohne +)</label>
       <input type="text" id="wa-phone" placeholder="41791234567" onchange="saveGlobal()">
@@ -527,13 +547,6 @@
     <div class="field">
       <label>CallMeBot API Key</label>
       <input type="text" id="wa-key" placeholder="Wird per WhatsApp zugestellt" onchange="saveGlobal()">
-    </div>
-    <div class="infobox">
-      <strong>Einrichtung (einmalig):</strong><br>
-      1. Nummer <strong>+34 644 97 79 48</strong> als „CallMeBot" speichern<br>
-      2. Nachricht senden: <em>I allow callmebot to send me messages</em><br>
-      3. API Key empfangen &amp; oben eintragen<br>
-      <a href="https://www.callmebot.com/blog/free-api-whatsapp-messages/" target="_blank" rel="noopener">→ callmebot.com Anleitung</a>
     </div>
     <button class="btn-secondary btn-block" onclick="testWhatsApp()" style="margin-top:12px">WhatsApp testen</button>
   </div>
