@@ -271,6 +271,71 @@
       align-items: end;
     }
     @media (max-width: 600px) { .station-grid { grid-template-columns: 1fr; } }
+    /* ── Search Dropdown ── */
+    .search-wrap { position: relative; }
+    .search-row { display: flex; gap: 6px; }
+    .search-row input { flex: 1; cursor: pointer; }
+    .search-btn {
+      flex-shrink: 0;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0 12px;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: .9rem;
+      transition: border-color .15s, color .15s;
+    }
+    .search-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .dropdown {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0; right: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      z-index: 200;
+      box-shadow: 0 8px 32px rgba(0,0,0,.5);
+      overflow: hidden;
+      display: none;
+      min-width: 320px;
+    }
+    .dropdown.open { display: block; }
+    .dd-search {
+      padding: 10px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .dd-search input {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 7px 10px;
+      color: var(--text);
+      font-size: .85rem;
+      outline: none;
+    }
+    .dd-search input:focus { border-color: var(--accent); }
+    .dd-list { max-height: 300px; overflow-y: auto; }
+    .dd-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      cursor: pointer;
+      border-bottom: 1px solid var(--surface2);
+      transition: background .1s;
+      gap: 12px;
+    }
+    .dd-item:last-child { border-bottom: none; }
+    .dd-item:hover { background: var(--surface2); }
+    .dd-name { font-size: .875rem; font-weight: 600; }
+    .dd-sub  { font-size: .7rem; color: var(--muted); margin-top: 2px; }
+    .dd-wind { font-size: .85rem; font-weight: 700; color: var(--accent); flex-shrink: 0; text-align: right; }
+    .dd-empty { padding: 20px; text-align: center; color: var(--muted); font-size: .82rem; }
     /* ── Source label ── */
     .src-label {
       font-size: .78rem;
@@ -530,14 +595,28 @@
 
     <!-- OpenWindMap -->
     <div class="src-label"><span class="src-dot"></span> OpenWindMap / Windbird</div>
-    <div class="station-grid">
+    <div style="display:grid; grid-template-columns: 2fr 1fr auto; gap:12px; align-items:end">
       <div class="field" style="margin:0">
-        <label>Station ID</label>
-        <input type="text" id="station-id" value="2172" onchange="saveConfig()">
+        <label>Station suchen</label>
+        <div class="search-wrap">
+          <div class="search-row">
+            <input type="text" id="owm-display" placeholder="Name oder ID tippen…" onclick="openOWMDropdown()" oninput="openOWMDropdown(); filterOWM(this.value)" autocomplete="off">
+            <button class="search-btn" onclick="openOWMDropdown()" title="Alle Stationen">🔍</button>
+          </div>
+          <input type="hidden" id="station-id" value="2172">
+          <div class="dropdown" id="owm-dropdown">
+            <div class="dd-search">
+              <input type="text" id="owm-filter" placeholder="Name, ID oder Koordinaten…" oninput="filterOWM(this.value)" onkeydown="if(event.key==='Escape')closeAllDropdowns()">
+            </div>
+            <div class="dd-list" id="owm-list">
+              <div class="dd-empty">Wird geladen…</div>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="field" style="margin:0">
         <label>Stationsname (optional)</label>
-        <input type="text" id="station-name" placeholder="Wird automatisch geladen" onchange="saveConfig()">
+        <input type="text" id="station-name" placeholder="Automatisch" onchange="saveConfig()">
       </div>
       <button class="btn-primary" onclick="fetchNow()" style="white-space:nowrap">↺ Laden</button>
     </div>
@@ -546,10 +625,25 @@
 
     <!-- Weather Underground -->
     <div class="src-label"><span class="src-dot wu"></span> Weather Underground</div>
-    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr auto; gap:12px; align-items:end">
+    <div style="display:grid; grid-template-columns: 2fr 1fr 1fr auto; gap:12px; align-items:end">
       <div class="field" style="margin:0">
-        <label>Station ID</label>
-        <input type="text" id="wu-sid" placeholder="z.B. ILUZERN12" onchange="saveConfig(); toggleWU()">
+        <label>Station suchen</label>
+        <div class="search-wrap">
+          <div class="search-row">
+            <input type="text" id="wu-display" placeholder="API Key eingeben, dann suchen…" onclick="openWUDropdown()" oninput="filterWU(this.value)" autocomplete="off">
+            <button class="search-btn" onclick="openWUDropdown()" title="Stationen suchen">🔍</button>
+          </div>
+          <input type="hidden" id="wu-sid">
+          <div class="dropdown" id="wu-dropdown">
+            <div class="dd-search">
+              <input type="text" id="wu-filter" placeholder="Station ID oder Name…" oninput="filterWU(this.value)" onkeydown="if(event.key==='Escape')closeAllDropdowns()">
+              <button class="btn-secondary" style="white-space:nowrap; padding:6px 10px; font-size:.75rem; flex-shrink:0" onclick="searchWUNearby()">📍 Nearby</button>
+            </div>
+            <div class="dd-list" id="wu-list">
+              <div class="dd-empty">API Key eintragen → 📍 Nearby klicken</div>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="field" style="margin:0">
         <label>API Key</label>
@@ -557,16 +651,13 @@
       </div>
       <div class="field" style="margin:0">
         <label>Stationsname (optional)</label>
-        <input type="text" id="wu-name" placeholder="Wird automatisch geladen" onchange="saveConfig()">
+        <input type="text" id="wu-name" placeholder="Automatisch" onchange="saveConfig()">
       </div>
       <button class="btn-secondary" onclick="fetchWUNow()" style="white-space:nowrap">↺ Laden</button>
     </div>
     <div class="infobox" style="margin-top:10px">
       API Key kostenlos (1500 Calls/Tag) →
-      <a href="https://www.wunderground.com/member/api-keys" target="_blank" rel="noopener">wunderground.com/member/api-keys</a><br>
-      Station ID auf der Karte →
-      <a href="https://www.wunderground.com/wundermap" target="_blank" rel="noopener">wunderground.com/wundermap</a>
-      (Station anklicken, ID aus URL ablesen)
+      <a href="https://www.wunderground.com/member/api-keys" target="_blank" rel="noopener">wunderground.com/member/api-keys</a>
     </div>
   </div>
 
@@ -622,9 +713,15 @@ function loadConfig() {
     $('n-sound').checked    = c.nSound   ?? true;
     $('n-banner').checked   = c.nBanner  ?? true;
     $('n-notif').checked    = c.nNotif   ?? true;
-    $('wu-sid').value       = c.wuSid    ?? '';
     $('wu-apikey').value    = c.wuKey    ?? '';
     $('wu-name').value      = c.wuName   ?? '';
+    // restore hidden fields + display labels
+    const owmId = c.sid ?? '2172';
+    $('station-id').value = owmId;
+    $('owm-display').value = c.owmLabel ?? (owmId ? `Station ${owmId}` : '');
+    const wuId = c.wuSid ?? '';
+    $('wu-sid').value = wuId;
+    $('wu-display').value = c.wuLabel ?? (wuId ? wuId : '');
   } catch(e) {}
   toggleWU();
 }
@@ -645,10 +742,168 @@ function saveConfig() {
     nSound:  $('n-sound').checked,
     nBanner: $('n-banner').checked,
     nNotif:  $('n-notif').checked,
-    wuSid:   $('wu-sid').value,
-    wuKey:   $('wu-apikey').value,
-    wuName:  $('wu-name').value,
+    wuSid:    $('wu-sid').value,
+    wuKey:    $('wu-apikey').value,
+    wuName:   $('wu-name').value,
+    wuLabel:  $('wu-display').value,
+    owmLabel: $('owm-display').value,
   }));
+}
+
+// ── Dropdown utils ────────────────────────────────────────────────────────────
+function closeAllDropdowns() {
+  document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('open'));
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.search-wrap')) closeAllDropdowns();
+});
+
+// ── OWM Station Search ────────────────────────────────────────────────────────
+let owmStations = null;
+let owmFiltered = [];
+
+async function loadOWMStations() {
+  if (owmStations) return;
+  $('owm-list').innerHTML = '<div class="dd-empty">Lade ~500 Stationen…</div>';
+  try {
+    const r = await fetch('https://api.pioupiou.fr/v1/live/all');
+    const json = await r.json();
+    owmStations = json.data
+      .filter(s => s.status?.state === 'on' && s.meta?.name)
+      .sort((a,b) => (a.meta.name).localeCompare(b.meta.name, 'de'));
+    addLog('info', `OpenWindMap: ${owmStations.length} aktive Stationen geladen`);
+  } catch(e) {
+    $('owm-list').innerHTML = `<div class="dd-empty">Fehler: ${e.message}</div>`;
+  }
+}
+
+async function openOWMDropdown() {
+  closeAllDropdowns();
+  $('owm-dropdown').classList.add('open');
+  $('owm-filter').value = $('owm-display').value.match(/\((\d+)\)$/)?.[1] ? '' : $('owm-display').value;
+  await loadOWMStations();
+  filterOWM($('owm-filter').value);
+  $('owm-filter').focus();
+}
+
+function filterOWM(q) {
+  if (!owmStations) return;
+  q = q.toLowerCase().trim();
+  owmFiltered = q
+    ? owmStations.filter(s =>
+        s.meta.name.toLowerCase().includes(q) ||
+        String(s.id).includes(q) ||
+        (s.location?.latitude?.toFixed(2) + ' ' + s.location?.longitude?.toFixed(2)).includes(q)
+      )
+    : owmStations;
+  renderOWMList(owmFiltered.slice(0, 60));
+}
+
+function renderOWMList(list) {
+  const el = $('owm-list');
+  if (!list.length) { el.innerHTML = '<div class="dd-empty">Keine Stationen gefunden</div>'; return; }
+  el.innerHTML = list.map(s => {
+    const name = s.meta.name;
+    const avg  = s.measurements?.wind_speed_avg;
+    const gust = s.measurements?.wind_speed_max;
+    const age  = s.measurements?.date
+      ? Math.round((Date.now() - new Date(s.measurements.date)) / 60000) : null;
+    const ageStr = age == null ? '' : age < 2 ? '· jetzt' : `· ${age} min`;
+    const lat = s.location?.latitude?.toFixed(2);
+    const lon = s.location?.longitude?.toFixed(2);
+    return `<div class="dd-item" onclick="selectOWM(${s.id},'${name.replace(/'/g,"\\'")}')">
+      <div>
+        <div class="dd-name">${name}</div>
+        <div class="dd-sub">ID ${s.id} · ${lat}°N ${lon}°O ${ageStr}</div>
+      </div>
+      <div class="dd-wind">${avg != null ? avg.toFixed(1) : '–'} <span style="font-size:.68rem;color:var(--muted)">/ ${gust != null ? gust.toFixed(1) : '–'} km/h</span></div>
+    </div>`;
+  }).join('');
+}
+
+function selectOWM(id, name) {
+  $('station-id').value  = id;
+  $('owm-display').value = `${name} (${id})`;
+  $('station-name').placeholder = name;
+  closeAllDropdowns();
+  saveConfig();
+  fetchNow();
+}
+
+// ── WU Station Search ─────────────────────────────────────────────────────────
+let wuStations = [];
+
+function openWUDropdown() {
+  closeAllDropdowns();
+  $('wu-dropdown').classList.add('open');
+  $('wu-filter').value = '';
+  $('wu-filter').focus();
+  if (wuStations.length) renderWUList(wuStations);
+}
+
+async function searchWUNearby() {
+  const apiKey = $('wu-apikey').value.trim();
+  if (!apiKey) { addLog('warn', 'WU: API Key zuerst eintragen'); return; }
+  $('wu-list').innerHTML = '<div class="dd-empty">📍 Standort wird ermittelt…</div>';
+  if (!navigator.geolocation) {
+    $('wu-list').innerHTML = '<div class="dd-empty">Geolocation nicht unterstützt</div>'; return;
+  }
+  navigator.geolocation.getCurrentPosition(async pos => {
+    const { latitude, longitude } = pos.coords;
+    $('wu-list').innerHTML = '<div class="dd-empty">Suche nahe Stationen…</div>';
+    try {
+      const url = `https://api.weather.com/v2/pws/nearby?geocode=${latitude},${longitude}&limit=25&units=m&format=json&numericPrecision=decimal&apiKey=${encodeURIComponent(apiKey)}`;
+      const r = await fetch(url);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const json = await r.json();
+      wuStations = json.stations || [];
+      addLog('info', `WU: ${wuStations.length} nahe Stationen gefunden`);
+      renderWUList(wuStations);
+    } catch(e) {
+      $('wu-list').innerHTML = `<div class="dd-empty">Fehler: ${e.message}</div>`;
+      addLog('alert', `WU Nearby: ${e.message}`);
+    }
+  }, err => {
+    $('wu-list').innerHTML = `<div class="dd-empty">Standort verweigert – ${err.message}</div>`;
+  });
+}
+
+function filterWU(q) {
+  if (!wuStations.length) return;
+  q = q.toLowerCase().trim();
+  const filtered = q
+    ? wuStations.filter(s =>
+        (s.stationID||'').toLowerCase().includes(q) ||
+        (s.neighborhood||'').toLowerCase().includes(q))
+    : wuStations;
+  renderWUList(filtered);
+}
+
+function renderWUList(list) {
+  const el = $('wu-list');
+  if (!list.length) { el.innerHTML = '<div class="dd-empty">Keine Stationen gefunden</div>'; return; }
+  el.innerHTML = list.map(s => {
+    const wind = s.metric?.windSpeed;
+    const gust = s.metric?.windGust;
+    const dist = s.distanceKm != null ? `${s.distanceKm.toFixed(1)} km` : '';
+    return `<div class="dd-item" onclick="selectWU('${s.stationID}','${(s.neighborhood||'').replace(/'/g,"\\'")}')">
+      <div>
+        <div class="dd-name">${s.neighborhood || s.stationID}</div>
+        <div class="dd-sub">${s.stationID}${dist ? ' · ' + dist + ' entfernt' : ''}</div>
+      </div>
+      <div class="dd-wind">${wind != null ? wind.toFixed(1) : '–'} <span style="font-size:.68rem;color:var(--muted)">/ ${gust != null ? gust.toFixed(1) : '–'} km/h</span></div>
+    </div>`;
+  }).join('');
+}
+
+function selectWU(id, name) {
+  $('wu-sid').value     = id;
+  $('wu-display').value = name ? `${name} (${id})` : id;
+  if (name) $('wu-name').placeholder = name;
+  closeAllDropdowns();
+  saveConfig();
+  toggleWU();
+  fetchWUNow();
 }
 
 // ── WU helpers ────────────────────────────────────────────────────────────────
@@ -696,9 +951,13 @@ function updateUI(data) {
   b.className = 'badge badge-ok';
   b.innerHTML = '<span class="dot"></span> Live';
 
-  // station name placeholder
-  if (!$('station-name').value && data.meta?.name) {
+  // station name + display label
+  if (data.meta?.name) {
     $('station-name').placeholder = data.meta.name;
+    if (!$('owm-display').value || $('owm-display').value.startsWith('Station ')) {
+      $('owm-display').value = `${data.meta.name} (${data.id})`;
+      saveConfig();
+    }
   }
 }
 
