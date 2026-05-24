@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wind Alert</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface2: #334155;
+      --border: #475569;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --green: #4ade80;
+      --yellow: #fbbf24;
+      --red: #f87171;
+      --orange: #fb923c;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 20px;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    /* ── Header ── */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    h1 { font-size: 1.5rem; font-weight: 800; color: var(--accent); }
+    .subtitle { font-size: 0.8rem; color: var(--muted); margin-top: 3px; }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    /* ── Status badge ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .badge-ok   { background: rgba(74,222,128,.15); color: var(--green); }
+    .badge-warn { background: rgba(251,191,36,.15);  color: var(--yellow); }
+    .badge-err  { background: rgba(248,113,113,.15); color: var(--red); }
+    .badge-off  { background: rgba(148,163,184,.15); color: var(--muted); }
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%; background: currentColor;
+      animation: blink 2s infinite;
+    }
+    @keyframes blink { 0%,100% { opacity:1 } 50% { opacity:.3 } }
+    /* ── Grid ── */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+    .span2 { grid-column: span 2; }
+    @media (max-width: 600px) { .span2 { grid-column: span 1; } }
+    /* ── Cards ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+    }
+    .card-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+    /* ── Wind display ── */
+    .wind-main {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .wind-big {
+      font-size: 4.5rem;
+      font-weight: 900;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .wind-unit { font-size: 1rem; color: var(--muted); }
+    .wind-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .stat {
+      background: var(--surface2);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+    }
+    .stat-lbl { font-size: .65rem; text-transform: uppercase; letter-spacing:.05em; color: var(--muted); }
+    .stat-val { font-size: 1.3rem; font-weight: 700; margin-top: 2px; font-variant-numeric: tabular-nums; }
+    .ts { font-size: .72rem; color: var(--muted); margin-top: 10px; }
+    .card-alert { border-color: var(--red); box-shadow: 0 0 0 1px var(--red), 0 0 20px rgba(248,113,113,.15); }
+    /* ── Compass ── */
+    .compass-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 10px;
+    }
+    /* ── Form controls ── */
+    .field { margin-bottom: 12px; }
+    .field:last-child { margin-bottom: 0; }
+    .field label {
+      display: block;
+      font-size: .78rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    input[type=text], input[type=number], select {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: var(--text);
+      font-size: .875rem;
+      outline: none;
+      transition: border-color .15s;
+    }
+    input:focus, select:focus { border-color: var(--accent); }
+    .inline { display: flex; gap: 8px; align-items: center; }
+    .inline input { flex: 1; }
+    .suffix {
+      flex-shrink: 0;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: .75rem;
+      color: var(--muted);
+    }
+    /* ── Toggle ── */
+    .toggle { position: relative; width: 38px; height: 22px; flex-shrink: 0; }
+    .toggle input { display: none; }
+    .slider {
+      position: absolute; inset: 0;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .slider::before {
+      content: '';
+      position: absolute;
+      width: 16px; height: 16px;
+      background: var(--muted);
+      border-radius: 50%;
+      top: 2px; left: 2px;
+      transition: transform .2s, background .2s;
+    }
+    .toggle input:checked + .slider { background: rgba(56,189,248,.2); border-color: var(--accent); }
+    .toggle input:checked + .slider::before { transform: translateX(16px); background: var(--accent); }
+    /* ── Threshold row ── */
+    .thresh-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .thresh-row .lbl { flex: 1; font-size: .82rem; color: var(--text); }
+    .thresh-row .inline { flex: 1.5; }
+    /* ── Buttons ── */
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 16px;
+      font-size: .875rem;
+      font-weight: 600;
+      transition: opacity .15s, transform .1s;
+    }
+    button:active { transform: scale(.97); }
+    .btn-primary { background: var(--accent); color: #0f172a; }
+    .btn-secondary { background: var(--surface2); color: var(--text); }
+    .btn-block { width: 100%; }
+    /* ── Log ── */
+    .log {
+      max-height: 220px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .log-entry {
+      display: flex;
+      gap: 10px;
+      font-size: .74rem;
+      padding: 6px 10px;
+      background: var(--surface2);
+      border-radius: 6px;
+      border-left: 3px solid transparent;
+    }
+    .log-t { color: var(--muted); flex-shrink: 0; font-variant-numeric: tabular-nums; }
+    .log-entry.info  { border-color: var(--accent); }
+    .log-entry.ok    { border-color: var(--green); }
+    .log-entry.warn  { border-color: var(--yellow); }
+    .log-entry.alert { border-color: var(--red); }
+    /* ── Info box ── */
+    .infobox {
+      background: rgba(56,189,248,.07);
+      border: 1px solid rgba(56,189,248,.2);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: .74rem;
+      color: var(--muted);
+      line-height: 1.7;
+      margin-top: 10px;
+    }
+    .infobox a { color: var(--accent); }
+    .infobox strong { color: var(--text); }
+    /* ── Countdown ── */
+    #countdown { font-size: .72rem; color: var(--muted); }
+    /* ── Alert banner ── */
+    #alert-banner {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: var(--red);
+      color: #fff;
+      padding: 14px 20px;
+      font-weight: 700;
+      font-size: 1rem;
+      z-index: 999;
+      text-align: center;
+      cursor: pointer;
+      animation: slidein .3s ease;
+    }
+    #alert-banner.visible { display: block; }
+    @keyframes slidein { from { transform: translateY(-100%) } to { transform: translateY(0) } }
+    /* ── Notification toggles ── */
+    .notif-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--surface2);
+      font-size: .82rem;
+    }
+    .notif-row:last-child { border-bottom: none; }
+    /* ── Station grid ── */
+    .station-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 12px;
+      align-items: end;
+    }
+    @media (max-width: 600px) { .station-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div>
+    <h1>Wind Alert</h1>
+    <div class="subtitle" id="subtitle">Initialisiere...</div>
+  </div>
+  <div class="header-right">
+    <span id="countdown"></span>
+    <span id="badge" class="badge badge-off"><span class="dot"></span> Offline</span>
+  </div>
+</div>
+
+<!-- Alert Banner (fixed top) -->
+<div id="alert-banner" onclick="dismissBanner()">
+  ⚠️ <span id="banner-text">Wind Alert!</span> &nbsp;·&nbsp; <small>klicken zum Schliessen</small>
+</div>
+
+<!-- Grid -->
+<div class="grid">
+
+  <!-- Current Wind -->
+  <div class="card" id="wind-card">
+    <div class="card-title">Aktuell</div>
+    <div class="wind-main">
+      <span class="wind-big" id="w-avg">–</span>
+      <span class="wind-unit">km/h</span>
+    </div>
+    <div class="wind-stats">
+      <div class="stat">
+        <div class="stat-lbl">Min</div>
+        <div class="stat-val" id="w-min">–</div>
+      </div>
+      <div class="stat">
+        <div class="stat-lbl">Böen</div>
+        <div class="stat-val" id="w-max" style="color:var(--orange)">–</div>
+      </div>
+      <div class="stat">
+        <div class="stat-lbl">Richtung</div>
+        <div class="stat-val" id="w-dir">–</div>
+      </div>
+    </div>
+    <div class="ts" id="w-ts">Noch keine Daten</div>
+    <div class="ts" id="w-fetched" style="margin-top:2px"></div>
+  </div>
+
+  <!-- Compass -->
+  <div class="card">
+    <div class="card-title">Windrichtung</div>
+    <div class="compass-wrap">
+      <svg id="compass" viewBox="0 0 100 100" width="130" height="130">
+        <circle cx="50" cy="50" r="46" fill="none" stroke="#334155" stroke-width="1.5"/>
+        <!-- Tick marks -->
+        <g stroke="#475569" stroke-width="1">
+          <line x1="50" y1="6"  x2="50" y2="12"/>
+          <line x1="50" y1="88" x2="50" y2="94"/>
+          <line x1="6"  y1="50" x2="12" y2="50"/>
+          <line x1="88" y1="50" x2="94" y2="50"/>
+        </g>
+        <!-- Cardinal labels -->
+        <text x="50" y="5"  text-anchor="middle" dominant-baseline="hanging" fill="#94a3b8" font-size="8" font-weight="700" font-family="sans-serif">N</text>
+        <text x="50" y="95" text-anchor="middle" dominant-baseline="auto"    fill="#94a3b8" font-size="8" font-weight="700" font-family="sans-serif">S</text>
+        <text x="96" y="50" text-anchor="middle" dominant-baseline="middle"  fill="#94a3b8" font-size="8" font-weight="700" font-family="sans-serif">O</text>
+        <text x="4"  y="50" text-anchor="middle" dominant-baseline="middle"  fill="#94a3b8" font-size="8" font-weight="700" font-family="sans-serif">W</text>
+        <!-- Needle: points toward wind origin -->
+        <g id="needle" transform="rotate(0,50,50)">
+          <polygon points="50,14 46,50 54,50" fill="#f87171"/>
+          <polygon points="50,86 46,50 54,50" fill="#475569"/>
+          <circle cx="50" cy="50" r="4" fill="#1e293b" stroke="#475569" stroke-width="1.5"/>
+        </g>
+      </svg>
+      <div style="font-size:.82rem; color:var(--muted); text-align:center" id="compass-lbl">– –</div>
+    </div>
+  </div>
+
+  <!-- Thresholds -->
+  <div class="card">
+    <div class="card-title">Schwellenwerte</div>
+
+    <div class="thresh-row">
+      <span class="lbl">Ø Windstärke</span>
+      <label class="toggle">
+        <input type="checkbox" id="t-avg-on" onchange="saveConfig()">
+        <span class="slider"></span>
+      </label>
+      <div class="inline">
+        <input type="number" id="t-avg" value="20" min="0" max="300" onchange="saveConfig()">
+        <span class="suffix">km/h</span>
+      </div>
+    </div>
+
+    <div class="thresh-row">
+      <span class="lbl">Max Böen</span>
+      <label class="toggle">
+        <input type="checkbox" id="t-max-on" checked onchange="saveConfig()">
+        <span class="slider"></span>
+      </label>
+      <div class="inline">
+        <input type="number" id="t-max" value="40" min="0" max="300" onchange="saveConfig()">
+        <span class="suffix">km/h</span>
+      </div>
+    </div>
+
+    <div class="field" style="margin-top:16px">
+      <label style="margin-bottom:8px">Benachrichtigungen</label>
+      <div class="notif-row">
+        <span>Browser-Dialog (alert)</span>
+        <label class="toggle">
+          <input type="checkbox" id="n-dialog" onchange="saveConfig()">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="notif-row">
+        <span>Ton-Alarm</span>
+        <label class="toggle">
+          <input type="checkbox" id="n-sound" checked onchange="saveConfig()">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="notif-row">
+        <span>Banner (oben)</span>
+        <label class="toggle">
+          <input type="checkbox" id="n-banner" checked onchange="saveConfig()">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="notif-row">
+        <span>Browser-Notification</span>
+        <label class="toggle">
+          <input type="checkbox" id="n-notif" checked onchange="saveConfig(); maybeRequestNotif()">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Alert-Pause nach Auslösung (Minuten)</label>
+      <input type="number" id="cooldown" value="30" min="1" max="1440" onchange="saveConfig()">
+    </div>
+
+    <div class="field">
+      <label>Abfrageintervall</label>
+      <select id="interval" onchange="saveConfig(); restartPolling()">
+        <option value="60000">1 Minute</option>
+        <option value="180000">3 Minuten</option>
+        <option value="300000" selected>5 Minuten</option>
+        <option value="600000">10 Minuten</option>
+        <option value="900000">15 Minuten</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- WhatsApp -->
+  <div class="card">
+    <div class="card-title">WhatsApp Alert</div>
+
+    <div class="field">
+      <label>Telefonnummer (mit Ländervorwahl, ohne +)</label>
+      <input type="text" id="wa-phone" placeholder="41791234567" onchange="saveConfig()">
+    </div>
+
+    <div class="field">
+      <label>CallMeBot API Key</label>
+      <input type="text" id="wa-key" placeholder="Wird per WhatsApp zugestellt" onchange="saveConfig()">
+    </div>
+
+    <div class="infobox">
+      <strong>Einrichtung (einmalig):</strong><br>
+      1. Nummer <strong>+34 644 97 79 48</strong> als „CallMeBot" speichern<br>
+      2. WhatsApp-Nachricht senden:<br>
+      <em>I allow callmebot to send me messages</em><br>
+      3. API Key per WhatsApp empfangen &amp; hier eintragen<br>
+      <br>
+      <strong>WhatsApp-Gruppe:</strong> Bot zur Gruppe hinzufügen, dann:<br>
+      <em>I allow callmebot to send messages to the group</em><br>
+      <a href="https://www.callmebot.com/blog/free-api-whatsapp-messages/" target="_blank" rel="noopener">→ callmebot.com Anleitung</a>
+    </div>
+
+    <div style="display:flex; gap:8px; margin-top:12px;">
+      <button class="btn-secondary btn-block" onclick="testAllAlerts()">Alle testen</button>
+      <button class="btn-secondary btn-block" onclick="testWhatsApp()">WhatsApp testen</button>
+    </div>
+  </div>
+
+  <!-- Station -->
+  <div class="card span2">
+    <div class="card-title">Station</div>
+    <div class="station-grid">
+      <div class="field" style="margin:0">
+        <label>Station ID</label>
+        <input type="text" id="station-id" value="2172" onchange="saveConfig()">
+      </div>
+      <div class="field" style="margin:0">
+        <label>Stationsname (optional)</label>
+        <input type="text" id="station-name" placeholder="Wird automatisch geladen" onchange="saveConfig()">
+      </div>
+      <button class="btn-primary" onclick="fetchNow()" style="white-space:nowrap">↺ Jetzt laden</button>
+    </div>
+  </div>
+
+  <!-- Log -->
+  <div class="card span2">
+    <div class="card-title" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
+      <span>Protokoll</span>
+      <button class="btn-secondary" style="padding:3px 10px; font-size:.7rem" onclick="clearLog()">Löschen</button>
+    </div>
+    <div class="log" id="log">
+      <div class="log-entry info">
+        <span class="log-t">–</span>
+        <span>Bereit. Konfiguriere Schwellenwerte und starte die Überwachung.</span>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /grid -->
+
+<script>
+// ── Constants ─────────────────────────────────────────────────────────────────
+const API = 'https://api.pioupiou.fr/v1/live/';
+const DIRS = ['N','NNO','NO','ONO','O','OSO','SO','SSO','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let pollTimer = null;
+let cdTimer = null;
+let nextAt = null;
+let lastAlertAt = 0;
+let lastData = null;
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const fmt1 = v => v != null ? v.toFixed(1) : '–';
+const ts = () => new Date().toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' });
+const dirLabel = deg => DIRS[Math.round(deg / 22.5) % 16];
+
+// ── Config persistence ────────────────────────────────────────────────────────
+function loadConfig() {
+  try {
+    const c = JSON.parse(localStorage.getItem('waCfg') || '{}');
+    $('station-id').value   = c.sid    ?? '2172';
+    $('station-name').value = c.sname  ?? '';
+    $('t-avg').value        = c.tAvg   ?? 20;
+    $('t-avg-on').checked   = c.tAvgOn ?? false;
+    $('t-max').value        = c.tMax   ?? 40;
+    $('t-max-on').checked   = c.tMaxOn ?? true;
+    $('cooldown').value     = c.cd     ?? 30;
+    $('interval').value     = c.iv       ?? 300000;
+    $('wa-phone').value     = c.phone    ?? '';
+    $('wa-key').value       = c.key      ?? '';
+    $('n-dialog').checked   = c.nDialog  ?? false;
+    $('n-sound').checked    = c.nSound   ?? true;
+    $('n-banner').checked   = c.nBanner  ?? true;
+    $('n-notif').checked    = c.nNotif   ?? true;
+  } catch(e) {}
+}
+
+function saveConfig() {
+  localStorage.setItem('waCfg', JSON.stringify({
+    sid:    $('station-id').value,
+    sname:  $('station-name').value,
+    tAvg:   +$('t-avg').value,
+    tAvgOn: $('t-avg-on').checked,
+    tMax:   +$('t-max').value,
+    tMaxOn: $('t-max-on').checked,
+    cd:     +$('cooldown').value,
+    iv:     +$('interval').value,
+    phone:   $('wa-phone').value,
+    key:     $('wa-key').value,
+    nDialog: $('n-dialog').checked,
+    nSound:  $('n-sound').checked,
+    nBanner: $('n-banner').checked,
+    nNotif:  $('n-notif').checked,
+  }));
+}
+
+// ── Wind data ─────────────────────────────────────────────────────────────────
+async function fetchWindData(sid) {
+  const r = await fetch(API + sid);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+function updateUI(data) {
+  const m = data.measurements;
+  const sname = $('station-name').value || data.meta?.name || `Station ${data.id}`;
+
+  $('subtitle').textContent = sname + (data.location ? ` · ${data.location.latitude.toFixed(3)}° N, ${data.location.longitude.toFixed(3)}° O` : '');
+  $('w-avg').textContent = fmt1(m.wind_speed_avg);
+  $('w-min').textContent = fmt1(m.wind_speed_min);
+  $('w-max').textContent = fmt1(m.wind_speed_max);
+
+  if (m.wind_heading != null) {
+    const lbl = dirLabel(m.wind_heading);
+    $('w-dir').textContent = lbl;
+    $('compass-lbl').textContent = `${lbl}  ${Math.round(m.wind_heading)}°`;
+    $('needle').setAttribute('transform', `rotate(${m.wind_heading},50,50)`);
+  }
+
+  if (m.date) {
+    const d = new Date(m.date);
+    const age = Math.round((Date.now() - d) / 60000);
+    const ageStr = age < 2 ? 'gerade eben' : `vor ${age} Min`;
+    $('w-ts').textContent = `📡 Sensor: ${d.toLocaleTimeString('de-CH',{hour:'2-digit',minute:'2-digit'})} (${ageStr})`;
+  }
+  $('w-fetched').textContent = `🔄 App-Abfrage: ${new Date().toLocaleTimeString('de-CH',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}`;
+
+  // status badge
+  const b = $('badge');
+  b.className = 'badge badge-ok';
+  b.innerHTML = '<span class="dot"></span> Live';
+
+  // station name placeholder
+  if (!$('station-name').value && data.meta?.name) {
+    $('station-name').placeholder = data.meta.name;
+  }
+}
+
+// ── Threshold check ───────────────────────────────────────────────────────────
+function checkThresholds(data) {
+  const m = data.measurements;
+  const reasons = [];
+
+  if ($('t-avg-on').checked && m.wind_speed_avg >= +$('t-avg').value)
+    reasons.push(`Ø ${fmt1(m.wind_speed_avg)} km/h ≥ ${$('t-avg').value} km/h`);
+  if ($('t-max-on').checked && m.wind_speed_max >= +$('t-max').value)
+    reasons.push(`Böen ${fmt1(m.wind_speed_max)} km/h ≥ ${$('t-max').value} km/h`);
+
+  const card = $('wind-card');
+  if (reasons.length) {
+    card.classList.add('card-alert');
+    $('badge').className = 'badge badge-warn';
+    $('badge').innerHTML = '<span class="dot"></span> Alert!';
+  } else {
+    card.classList.remove('card-alert');
+  }
+
+  if (!reasons.length) return;
+
+  const now = Date.now();
+  const cdMs = +$('cooldown').value * 60000;
+  if (now - lastAlertAt < cdMs) {
+    const rem = Math.round((cdMs - (now - lastAlertAt)) / 60000);
+    addLog('info', `Threshold überschritten – Pause aktiv (noch ${rem} min)`);
+    return;
+  }
+  lastAlertAt = now;
+
+  const sname = $('station-name').value || data.meta?.name || `Station ${data.id}`;
+  const dir = data.measurements.wind_heading;
+  const msg = `⚠️ Wind Alert: ${sname}\n${reasons.join(', ')}\nRichtung: ${dir != null ? dirLabel(dir) + ' (' + Math.round(dir) + '°)' : '–'}\n${new Date().toLocaleString('de-CH')}`;
+
+  addLog('alert', `ALERT ausgelöst: ${reasons.join(' | ')}`);
+  sendWhatsApp(msg);
+  if ($('n-notif').checked)  showBrowserNotif(sname, reasons.join(', '));
+  if ($('n-banner').checked) showBanner(reasons.join(' | '));
+  if ($('n-sound').checked)  playAlertSound();
+  if ($('n-dialog').checked) setTimeout(() => alert(`⚠️ Wind Alert: ${sname}\n\n${reasons.join('\n')}`), 100);
+}
+
+// ── Notifications ─────────────────────────────────────────────────────────────
+async function sendWhatsApp(text) {
+  const phone = $('wa-phone').value.trim();
+  const key   = $('wa-key').value.trim();
+  if (!phone || !key) {
+    addLog('info', 'WhatsApp nicht konfiguriert – Alert nur lokal');
+    return;
+  }
+  try {
+    const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(text)}&apikey=${encodeURIComponent(key)}`;
+    await fetch(url, { mode: 'no-cors' });
+    addLog('ok', `WhatsApp gesendet an +${phone}`);
+  } catch(e) {
+    addLog('alert', `WhatsApp Fehler: ${e.message}`);
+  }
+}
+
+function showBrowserNotif(title, body) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  new Notification(`🌬️ Wind Alert: ${title}`, { body });
+}
+
+function showBanner(text) {
+  $('banner-text').textContent = text;
+  $('alert-banner').classList.add('visible');
+}
+
+function dismissBanner() {
+  $('alert-banner').classList.remove('visible');
+}
+
+function playAlertSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    // Three short beeps
+    [0, 0.25, 0.5].forEach(offset => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0, ctx.currentTime + offset);
+      gain.gain.linearRampToValueAtTime(0.4, ctx.currentTime + offset + 0.02);
+      gain.gain.linearRampToValueAtTime(0, ctx.currentTime + offset + 0.18);
+      osc.start(ctx.currentTime + offset);
+      osc.stop(ctx.currentTime + offset + 0.2);
+    });
+  } catch(e) {
+    addLog('info', `Ton nicht möglich: ${e.message}`);
+  }
+}
+
+async function maybeRequestNotif() {
+  if ($('n-notif').checked) {
+    const p = await Notification.requestPermission();
+    addLog(p === 'granted' ? 'ok' : 'info',
+      p === 'granted' ? 'Browser-Benachrichtigungen aktiviert' : 'Berechtigung verweigert');
+  }
+}
+
+async function testAllAlerts() {
+  const sname = $('station-name').value || $('station-name').placeholder || 'Teststation';
+  addLog('info', 'Starte Test aller Benachrichtigungen...');
+  if ($('n-sound').checked)  playAlertSound();
+  if ($('n-banner').checked) showBanner(`Test: Schiberenegg – Böen 42.0 km/h`);
+  if ($('n-notif').checked)  showBrowserNotif(sname, 'Test: Böen 42 km/h');
+  if ($('n-dialog').checked) setTimeout(() => alert(`⚠️ Wind Alert TEST\nStation: ${sname}\nBöen 42 km/h`), 100);
+}
+
+async function testWhatsApp() {
+  const sname = $('station-name').value || $('station-name').placeholder || 'Teststation';
+  addLog('info', 'Sende Test-Nachricht...');
+  await sendWhatsApp(`🧪 Wind Alert Test\nStation: ${sname}\nDie Alerts sind aktiv.\n${new Date().toLocaleString('de-CH')}`);
+}
+
+// ── Log ───────────────────────────────────────────────────────────────────────
+function addLog(type, msg) {
+  const log = $('log');
+  const el = document.createElement('div');
+  el.className = `log-entry ${type}`;
+  el.innerHTML = `<span class="log-t">${ts()}</span><span>${msg}</span>`;
+  log.prepend(el);
+  // keep max 60 entries
+  while (log.children.length > 60) log.removeChild(log.lastChild);
+}
+
+function clearLog() {
+  $('log').innerHTML = '';
+  addLog('info', 'Protokoll geleert');
+}
+
+// ── Polling ───────────────────────────────────────────────────────────────────
+async function fetchNow() {
+  const sid = $('station-id').value.trim();
+  if (!sid) { addLog('warn', 'Keine Station-ID angegeben'); return; }
+  try {
+    const json = await fetchWindData(sid);
+    lastData = json.data;
+    updateUI(lastData);
+    checkThresholds(lastData);
+  } catch(e) {
+    addLog('alert', `Ladefehler: ${e.message}`);
+    $('badge').className = 'badge badge-err';
+    $('badge').innerHTML = '<span class="dot"></span> Fehler';
+  }
+}
+
+function restartPolling() {
+  if (pollTimer) clearInterval(pollTimer);
+  if (cdTimer)   clearInterval(cdTimer);
+  const iv = +$('interval').value;
+  fetchNow();
+  nextAt = Date.now() + iv;
+  pollTimer = setInterval(() => { fetchNow(); nextAt = Date.now() + iv; }, iv);
+  cdTimer = setInterval(() => {
+    if (!nextAt) return;
+    const s = Math.max(0, Math.round((nextAt - Date.now()) / 1000));
+    $('countdown').textContent = `↺ in ${s}s`;
+  }, 1000);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+loadConfig();
+if ('Notification' in window && Notification.permission === 'default' && $('n-notif').checked) {
+  Notification.requestPermission();
+}
+restartPolling();
+</script>
+</body>
+</html>
