@@ -280,6 +280,12 @@
   <div>
     <h1>Wind Alert</h1>
     <div class="subtitle" id="subtitle">Initialisiere...</div>
+    <div style="margin-top:4px">
+      <a id="owm-link" href="https://www.openwindmap.org/windbird-2172" target="_blank" rel="noopener"
+         style="font-size:.75rem; color:var(--accent); text-decoration:none;">
+        🗺 openwindmap.org/windbird-2172
+      </a>
+    </div>
   </div>
   <div class="header-right">
     <span id="countdown"></span>
@@ -560,6 +566,9 @@ function updateUI(data) {
   const sname = $('station-name').value || data.meta?.name || `Station ${data.id}`;
 
   $('subtitle').textContent = sname + (data.location ? ` · ${data.location.latitude.toFixed(3)}° N, ${data.location.longitude.toFixed(3)}° O` : '');
+  const sid = data.id;
+  $('owm-link').href = `https://www.openwindmap.org/windbird-${sid}`;
+  $('owm-link').textContent = `🗺 openwindmap.org/windbird-${sid}`;
   $('w-avg').textContent = fmt1(m.wind_speed_avg);
   $('w-min').textContent = fmt1(m.wind_speed_min);
   $('w-max').textContent = fmt1(m.wind_speed_max);
