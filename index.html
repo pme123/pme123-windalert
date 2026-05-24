@@ -33,39 +33,16 @@
       padding: 20px;
     }
 
-    /* ── z9nai Header ── */
-    .z9-header {
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-      background: rgba(25,26,28,0.95);
-      backdrop-filter: blur(12px);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-    .z9-header-inner {
-      max-width: 960px;
-      margin: 0 auto;
-      padding: 0 20px;
-      height: 64px;
-      display: flex;
-      align-items: center;
-    }
-    .z9-logo-link {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      text-decoration: none;
-    }
-    .z9-logo-img { width: 40px; height: 40px; }
-    .z9-logo-name {
+    /* ── z9nai byline ── */
+    .z9-byline {
       font-family: 'Courier New', Courier, monospace;
-      font-weight: 700;
-      font-size: 1.2rem;
-      letter-spacing: -0.05em;
+      font-size: .65rem;
+      letter-spacing: .05em;
       background: linear-gradient(to right, #fb923c, #8b5cf6);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
+      margin-top: 1px;
     }
 
     /* ── z9nai Footer ── */
@@ -352,16 +329,6 @@
 </head>
 <body>
 
-<!-- z9nai Brand Header -->
-<header class="z9-header">
-  <div class="z9-header-inner">
-    <a href="https://z9nai.ch" target="_blank" rel="noopener" class="z9-logo-link">
-      <img alt="z9nai logo" class="z9-logo-img" src="https://z9nai.ch/assets/logo_new-DwOlNuuy.png">
-      <span class="z9-logo-name">z9nai GmbH</span>
-    </a>
-  </div>
-</header>
-
 <!-- Alert Banner -->
 <div id="alert-banner" onclick="dismissBanner()">
   ⚠️ <span id="banner-text">Wind Alert!</span> &nbsp;·&nbsp; <small>klicken zum Schliessen</small>
@@ -369,9 +336,17 @@
 
 <div class="app-wrap">
 
-<!-- App Header -->
+<!-- Header -->
 <div class="header">
-  <h1>Wind Alert</h1>
+  <div style="display:flex; align-items:center; gap:14px">
+    <a href="https://z9nai.ch" target="_blank" rel="noopener" style="display:flex; align-items:center; flex-shrink:0">
+      <img src="https://z9nai.ch/assets/logo_new-DwOlNuuy.png" alt="z9nai" style="width:36px; height:36px">
+    </a>
+    <div>
+      <h1>Wind Alert</h1>
+      <div class="z9-byline">by z9nai GmbH</div>
+    </div>
+  </div>
   <div class="header-right">
     <span id="countdown"></span>
     <span id="badge" class="badge badge-off"><span class="dot"></span> Offline</span>
