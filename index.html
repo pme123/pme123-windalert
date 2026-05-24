@@ -26,10 +26,73 @@
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
-      padding: 20px;
+    }
+    .app-wrap {
       max-width: 960px;
       margin: 0 auto;
+      padding: 20px;
     }
+
+    /* ── z9nai Header ── */
+    .z9-header {
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      background: rgba(25,26,28,0.95);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .z9-header-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 20px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+    }
+    .z9-logo-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+    .z9-logo-img { width: 40px; height: 40px; }
+    .z9-logo-name {
+      font-family: 'Courier New', Courier, monospace;
+      font-weight: 700;
+      font-size: 1.2rem;
+      letter-spacing: -0.05em;
+      background: linear-gradient(to right, #fb923c, #8b5cf6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ── z9nai Footer ── */
+    .z9-footer {
+      border-top: 1px solid rgba(255,255,255,0.1);
+      padding: 1.5rem 20px;
+    }
+    .z9-footer-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .z9-copyright {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 10px;
+      color: rgba(255,255,255,0.2);
+      letter-spacing: 0.1em;
+    }
+    .z9-mail-icon {
+      color: rgba(255,255,255,0.2);
+      transition: color 0.2s;
+      display: flex;
+      align-items: center;
+    }
+    .z9-mail-icon:hover { color: rgba(255,255,255,0.6); }
 
     /* ── Header ── */
     .header {
@@ -289,12 +352,24 @@
 </head>
 <body>
 
+<!-- z9nai Brand Header -->
+<header class="z9-header">
+  <div class="z9-header-inner">
+    <a href="https://z9nai.ch" target="_blank" rel="noopener" class="z9-logo-link">
+      <img alt="z9nai logo" class="z9-logo-img" src="https://z9nai.ch/assets/logo_new-DwOlNuuy.png">
+      <span class="z9-logo-name">z9nai GmbH</span>
+    </a>
+  </div>
+</header>
+
 <!-- Alert Banner -->
 <div id="alert-banner" onclick="dismissBanner()">
   ⚠️ <span id="banner-text">Wind Alert!</span> &nbsp;·&nbsp; <small>klicken zum Schliessen</small>
 </div>
 
-<!-- Header -->
+<div class="app-wrap">
+
+<!-- App Header -->
 <div class="header">
   <h1>Wind Alert</h1>
   <div class="header-right">
@@ -475,6 +550,22 @@
   </div>
 
 </div>
+
+</div><!-- /app-wrap -->
+
+<!-- z9nai Footer -->
+<footer class="z9-footer">
+  <div class="z9-footer-inner">
+    <div class="z9-copyright">© 2026 z9nai GmbH // Alle Rechte vorbehalten</div>
+    <a href="mailto:info@z9nai.ch" class="z9-mail-icon" title="info@z9nai.ch">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"></path>
+        <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+      </svg>
+    </a>
+  </div>
+</footer>
 
 <script>
 // ── Constants ──────────────────────────────────────────────────────────────────
