@@ -524,13 +524,7 @@
             </div>
             <div class="dd-list" id="owm-list"><div class="dd-empty">Wird geladen…</div></div>
             <div id="wu-dd-section" style="display:none">
-              <div class="dd-section-hd">Weather Underground PWS</div>
-              <div style="padding:8px 14px 10px;display:flex;gap:6px">
-                <input type="text" id="wu-id-input" placeholder="Station ID (z.B. IZURI26)"
-                  style="flex:1;font-size:.8rem"
-                  onkeydown="if(event.key==='Enter')loadWUStation()">
-                <button class="btn-secondary" style="padding:4px 10px;font-size:.75rem" onclick="loadWUStation()">Laden</button>
-              </div>
+              <input type="hidden" id="wu-id-input">
             </div>
           </div>
         </div>
@@ -1456,29 +1450,44 @@ async function openOWMDropdown() {
 
 function filterOWM(q) {
   if (!owmStations) return;
-  q = q.toLowerCase().trim();
-  const piou = q
+  const raw = q.trim();
+  const ql  = raw.toLowerCase();
+  const piou = ql
     ? owmStations.filter(s =>
-        s.meta.name.toLowerCase().includes(q) ||
-        String(s.id).includes(q) ||
-        (s.location?.latitude?.toFixed(2) + ' ' + s.location?.longitude?.toFixed(2)).includes(q))
+        s.meta.name.toLowerCase().includes(ql) ||
+        String(s.id).includes(ql) ||
+        (s.location?.latitude?.toFixed(2) + ' ' + s.location?.longitude?.toFixed(2)).includes(ql))
     : owmStations;
   const msw = mswMetaArr.length
-    ? (q
+    ? (ql
       ? mswMetaArr.filter(s =>
-          s.name.toLowerCase().includes(q) ||
-          s.abbr.toLowerCase().includes(q) ||
-          s.canton.toLowerCase().includes(q))
+          s.name.toLowerCase().includes(ql) ||
+          s.abbr.toLowerCase().includes(ql) ||
+          s.canton.toLowerCase().includes(ql))
       : mswMetaArr)
     : [];
   owmFiltered = [...piou, ...msw.map(s => ({_msw: true, ...s}))];
-  renderOWMList(owmFiltered.slice(0, 80));
+  // WU shortcut: if key set and text looks like a station ID, append as direct option
+  const wuKey = $('wu-key').value.trim();
+  if (wuKey && raw.length >= 3) {
+    owmFiltered = [...owmFiltered, { _wu: true, id: raw.toUpperCase() }];
+  }
+  renderOWMList(owmFiltered.slice(0, 81));
 }
 
 function renderOWMList(list) {
   const el = $('owm-list');
   if (!list.length) { el.innerHTML = '<div class="dd-empty">Keine Stationen gefunden</div>'; return; }
   el.innerHTML = list.map(s => {
+    if (s._wu) {
+      return `<div class="dd-item" onclick="$('wu-id-input').value='${s.id}';loadWUStation()">
+        <div>
+          <div class="dd-name">${s.id}</div>
+          <div class="dd-sub">Weather Underground PWS laden…</div>
+        </div>
+        <div class="dd-badge wu">PWS</div>
+      </div>`;
+    }
     if (s._msw) {
       const elev = s.elevation ? ` · ${s.elevation} m` : '';
       return `<div class="dd-item" onclick="selectMSWStation('${s.abbr}','${s.name.replace(/'/g,"\\'")}')">
