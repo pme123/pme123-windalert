@@ -1,23 +1,31 @@
 <template>
   <div v-if="visible" style="margin-top:14px">
-    <div ref="mapEl" class="station-map-el"></div>
+    <div class="map-wrap">
+      <div ref="mapEl" class="station-map-el"></div>
+      <div v-if="loading" class="map-loading">
+        <span class="map-spinner"></span>
+        <span style="margin-left:8px;font-size:.8rem;color:#94a3b8">Karte wird geladen…</span>
+      </div>
+    </div>
     <div class="ts" style="margin-top:6px;text-align:center">{{ coordsText }}</div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, nextTick, onBeforeUnmount } from 'vue'
 import L from 'leaflet'
-import type { Map as LMap, Marker } from 'leaflet'
+import type { Map as LMap, Marker, TileLayer } from 'leaflet'
 
 const props = defineProps<{
   lat: number | null
   lon: number | null
 }>()
 
-const mapEl    = ref<HTMLElement | null>(null)
-let leafletMap: LMap | null = null
+const mapEl   = ref<HTMLElement | null>(null)
+const loading = ref(false)
+let leafletMap: LMap   | null = null
 let marker:     Marker | null = null
+let tileLayer:  TileLayer | null = null
 let smallIcon:  L.Icon | null = null
 
 const visible = computed(() => props.lat != null && props.lon != null)
@@ -30,11 +38,17 @@ const coordsText = computed(() => {
 function initMap(lat: number, lon: number) {
   if (!mapEl.value) return
   if (!leafletMap) {
+    loading.value = true
     leafletMap = L.map(mapEl.value, { zoomControl: true }).setView([lat, lon], 10)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
       attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a> © <a href="https://carto.com/attributions">CARTO</a>',
       maxZoom: 19,
     }).addTo(leafletMap)
+    // Hide spinner once tiles are loaded (or after 8s timeout as fallback)
+    const done = () => { loading.value = false }
+    tileLayer.once('load', done)
+    setTimeout(done, 8000)
+
     smallIcon = L.icon({
       iconUrl:     'https://unpkg.com/leaflet@1.9/dist/images/marker-icon.png',
       iconSize:    [16, 26],
@@ -49,21 +63,23 @@ function initMap(lat: number, lon: number) {
     leafletMap.setView([lat, lon], 13)
     marker?.setLatLng([lat, lon])
   }
-  setTimeout(() => leafletMap?.invalidateSize(), 50)
+  // invalidateSize after layout settles
+  setTimeout(() => leafletMap?.invalidateSize(), 100)
 }
 
 watch(
   [() => props.lat, () => props.lon, visible],
   async ([lat, lon, vis]) => {
     if (!vis || lat == null || lon == null) return
-    // wait for DOM
-    await new Promise(r => setTimeout(r, 30))
+    await nextTick()
+    // Give the DOM a moment to show the map container before Leaflet measures it
+    await new Promise(r => setTimeout(r, 50))
     initMap(lat, lon)
   },
   { immediate: true }
 )
 
 onBeforeUnmount(() => {
-  if (leafletMap) { leafletMap.remove(); leafletMap = null; marker = null }
+  if (leafletMap) { leafletMap.remove(); leafletMap = null; marker = null; tileLayer = null }
 })
 </script>

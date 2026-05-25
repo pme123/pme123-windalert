@@ -239,8 +239,25 @@ h1 { font-size: 1.5rem; font-weight: 800; color: var(--accent); }
 }
 .range-btn.active { background: rgba(56,189,248,.15); border-color: var(--accent); color: var(--accent); }
 .chart-wrap { position: relative; height: 160px; }
+.map-wrap { position: relative; }
 .station-map-el { height: 160px; border-radius: 8px; overflow: hidden; }
 .leaflet-container { background: #e8e8e8; }
+.map-loading {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(15,23,42,.55);
+  border-radius: 8px;
+  z-index: 10;
+  pointer-events: none;
+}
+.map-spinner {
+  width: 18px; height: 18px;
+  border: 2px solid rgba(148,163,184,.3);
+  border-top-color: #38bdf8;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 .station-map-el .leaflet-pane,
 .station-map-el .leaflet-top,
 .station-map-el .leaflet-bottom { z-index: 1 !important; }
