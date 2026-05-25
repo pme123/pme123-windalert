@@ -1,5 +1,5 @@
 <template>
-  <div v-if="visible" style="margin-top:14px">
+  <div v-show="visible" style="margin-top:14px">
     <div class="map-wrap">
       <div ref="mapEl" class="station-map-el"></div>
       <div v-if="loading" class="map-loading">
@@ -23,10 +23,9 @@ const props = defineProps<{
 
 const mapEl   = ref<HTMLElement | null>(null)
 const loading = ref(false)
-let leafletMap: LMap   | null = null
-let marker:     Marker | null = null
+let leafletMap: LMap      | null = null
+let marker:     Marker    | null = null
 let tileLayer:  TileLayer | null = null
-let smallIcon:  L.Icon | null = null
 
 const visible = computed(() => props.lat != null && props.lon != null)
 
@@ -38,43 +37,42 @@ const coordsText = computed(() => {
 function initMap(lat: number, lon: number) {
   if (!mapEl.value) return
   if (!leafletMap) {
+    loading.value = true
     leafletMap = L.map(mapEl.value, { zoomControl: true }).setView([lat, lon], 10)
-    tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a> © <a href="https://carto.com/attributions">CARTO</a>',
-      maxZoom: 19,
-    }).addTo(leafletMap)
-    // Hide spinner once tiles are loaded (or after 8s timeout as fallback)
+    tileLayer = L.tileLayer(
+      'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+      {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a> © <a href="https://carto.com/attributions">CARTO</a>',
+        maxZoom: 19,
+      }
+    ).addTo(leafletMap)
     const done = () => { loading.value = false }
     tileLayer.once('load', done)
-    setTimeout(done, 8000)
+    setTimeout(done, 8000)   // fallback: hide spinner after 8s
 
-    smallIcon = L.icon({
-      iconUrl:     'https://unpkg.com/leaflet@1.9/dist/images/marker-icon.png',
-      iconSize:    [16, 26],
-      iconAnchor:  [8, 26],
-      popupAnchor: [0, -26],
-      shadowUrl:   'https://unpkg.com/leaflet@1.9/dist/images/marker-shadow.png',
-      shadowSize:  [26, 26],
-      shadowAnchor:[8, 26],
+    const smallIcon = L.icon({
+      iconUrl:      'https://unpkg.com/leaflet@1.9/dist/images/marker-icon.png',
+      iconSize:     [16, 26], iconAnchor:   [8, 26], popupAnchor:  [0, -26],
+      shadowUrl:    'https://unpkg.com/leaflet@1.9/dist/images/marker-shadow.png',
+      shadowSize:   [26, 26], shadowAnchor: [8, 26],
     })
     marker = L.marker([lat, lon], { icon: smallIcon }).addTo(leafletMap)
   } else {
     leafletMap.setView([lat, lon], 13)
     marker?.setLatLng([lat, lon])
   }
-  // invalidateSize after layout settles
   setTimeout(() => leafletMap?.invalidateSize(), 100)
 }
 
+// Watch lat/lon only — with v-show the container is always in the DOM,
+// so leafletMap never gets a stale reference to a removed element.
 watch(
-  [() => props.lat, () => props.lon, visible],
-  async ([lat, lon, vis]) => {
-    if (!vis || lat == null || lon == null) return
-    if (!leafletMap) {
-      loading.value = true      // set BEFORE nextTick so Vue renders spinner first
-      await nextTick()          // Vue renders spinner + map container
-      await new Promise(r => setTimeout(r, 50))  // layout settles
-    }
+  [() => props.lat, () => props.lon],
+  async ([lat, lon]) => {
+    if (lat == null || lon == null) return
+    // nextTick ensures v-show has applied (display:none → visible)
+    // before Leaflet measures the container dimensions.
+    await nextTick()
     initMap(lat, lon)
   },
   { immediate: true }
