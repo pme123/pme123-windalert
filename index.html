@@ -366,6 +366,13 @@
     .dd-wind { font-size: .85rem; font-weight: 700; color: var(--accent); flex-shrink: 0; text-align: right; }
     .dd-badge { font-size: .65rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; flex-shrink: 0; letter-spacing: .05em; }
     .dd-badge.msw { background: rgba(16,185,129,.18); color: #34d399; border: 1px solid rgba(52,211,153,.3); }
+    .dd-badge.wu  { background: rgba(251,146,60,.18);  color: #fb923c; border: 1px solid rgba(251,146,60,.3); }
+    .dd-section-hd { padding: 8px 14px 4px; font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); border-top: 1px solid var(--border); background: var(--bg); }
+    .settings-sep { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+    .settings-section-hd { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .wu-id-row { display: flex; gap: 6px; }
+    .wu-id-row input { flex: 1; }
+    .wu-id-row button { flex-shrink: 0; }
     .dd-empty { padding: 20px; text-align: center; color: var(--muted); font-size: .82rem; }
   </style>
 </head>
@@ -516,6 +523,15 @@
                 oninput="filterOWM(this.value)" onkeydown="if(event.key==='Escape')closeAllDropdowns()">
             </div>
             <div class="dd-list" id="owm-list"><div class="dd-empty">Wird geladen…</div></div>
+            <div id="wu-dd-section" style="display:none">
+              <div class="dd-section-hd">Weather Underground PWS</div>
+              <div style="padding:8px 14px 10px;display:flex;gap:6px">
+                <input type="text" id="wu-id-input" placeholder="Station ID (z.B. IZURI26)"
+                  style="flex:1;font-size:.8rem"
+                  onkeydown="if(event.key==='Enter')loadWUStation()">
+                <button class="btn-secondary" style="padding:4px 10px;font-size:.75rem" onclick="loadWUStation()">Laden</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -537,11 +553,14 @@
 <!-- Bottom panels -->
 <div class="bottom-grid">
 
-  <!-- WhatsApp -->
+  <!-- Settings -->
   <div class="bottom-card">
-    <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <span>WhatsApp Alert</span>
-      <span class="info-icon" tabindex="0">?
+    <div class="card-title" style="margin-bottom:16px">Einstellungen</div>
+
+    <!-- WhatsApp -->
+    <div class="settings-section-hd">
+      WhatsApp Alert
+      <span class="info-icon" tabindex="0" style="margin-left:auto">?
         <div class="info-tooltip">
           <strong>Einrichtung (einmalig)</strong><br>
           1. Nummer <strong>+34 644 97 79 48</strong> als „CallMeBot" speichern<br>
@@ -564,7 +583,17 @@
       <label>CallMeBot API Key</label>
       <input type="text" id="wa-key" placeholder="Wird per WhatsApp zugestellt" onchange="saveGlobal()">
     </div>
-    <button class="btn-secondary btn-block" onclick="testWhatsApp()" style="margin-top:12px">WhatsApp testen</button>
+    <button class="btn-secondary btn-block" onclick="testWhatsApp()">WhatsApp testen</button>
+
+    <hr class="settings-sep">
+
+    <!-- Weather Underground -->
+    <div class="settings-section-hd">Weather Underground</div>
+    <div class="field">
+      <label>API Key</label>
+      <input type="text" id="wu-key" placeholder="z.B. a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+        onchange="saveGlobal(); updateWUDropdown()">
+    </div>
   </div>
 
   <!-- Log -->
@@ -717,6 +746,7 @@ function loadConfig() {
     const key   = c.key   || old.key   || '';
     $('wa-phone').value   = phone;
     $('wa-key').value     = key;
+    $('wu-key').value     = c.wuKey || '';
     $('n-dialog').checked = c.nDialog ?? old.nDialog ?? false;
     $('n-sound').checked  = c.nSound  ?? old.nSound  ?? true;
     $('n-banner').checked = c.nBanner ?? old.nBanner ?? true;
@@ -747,6 +777,7 @@ function saveConfig() {
     activeIdx,
     phone:   $('wa-phone').value,
     key:     $('wa-key').value,
+    wuKey:   $('wu-key').value,
     nDialog: $('n-dialog').checked,
     nSound:  $('n-sound').checked,
     nBanner: $('n-banner').checked,
@@ -1017,6 +1048,65 @@ function selectMSWStation(abbr, name) {
   fetchNow();
 }
 
+// ── Weather Underground ────────────────────────────────────────────────────────
+function updateWUDropdown() {
+  const hasKey = $('wu-key').value.trim().length > 0;
+  const el = $('wu-dd-section');
+  if (el) el.style.display = hasKey ? '' : 'none';
+}
+
+async function fetchWUStation(stationId) {
+  const key = $('wu-key').value.trim();
+  if (!key) throw new Error('Kein Weather Underground API Key konfiguriert');
+  const url = `https://api.weather.com/v2/pws/observations/current?stationId=${encodeURIComponent(stationId)}&format=json&units=m&apiKey=${encodeURIComponent(key)}`;
+  const r   = await fetch(url);
+  if (!r.ok) throw new Error(`WU HTTP ${r.status}`);
+  const json = await r.json();
+  if (!json.observations?.length) throw new Error(`Station ${stationId} nicht gefunden oder keine Daten`);
+  const obs = json.observations[0];
+  return {
+    id:   obs.stationID,
+    meta: { name: obs.neighborhood || obs.stationID },
+    location: {
+      latitude:  obs.lat,
+      longitude: obs.lon,
+      success:   !!(obs.lat && obs.lon),
+    },
+    measurements: {
+      date:           obs.obsTimeUtc,
+      wind_heading:   obs.winddir ?? null,
+      wind_speed_avg: obs.metric?.windSpeed ?? null,   // km/h
+      wind_speed_max: obs.metric?.windGust  ?? null,   // km/h
+      wind_speed_min: null,
+    },
+  };
+}
+
+async function loadWUStation() {
+  const stationId = $('wu-id-input').value.trim().toUpperCase();
+  if (!stationId) return;
+  addLog('info', `WU: Lade Station ${stationId}…`);
+  try {
+    const data = await fetchWUStation(stationId);
+    const name = data.meta.name;
+    closeAllDropdowns();
+    const s   = stations[activeIdx];
+    s.id      = stationId;
+    s.name    = name;
+    s.source  = 'wunderground';
+    $('owm-display').value        = `${name} (${stationId})`;
+    $('station-name').value       = name;
+    $('station-name').placeholder = name;
+    s.lastData = data;
+    updateUI(data);
+    saveConfig();
+    renderTabs();
+    addLog('ok', `WU: Station ${stationId} – ${name} geladen`);
+  } catch(e) {
+    addLog('alert', `WU Fehler: ${e.message}`);
+  }
+}
+
 async function fetchWindData(sid) {
   const r = await fetch(API + sid);
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -1032,6 +1122,9 @@ function updateUI(data) {
     const elev = meta?.elevation ? ` · ${meta.elevation} m ü.M.` : '';
     $('owm-link').href        = `https://www.meteoswiss.admin.ch/services-and-publications/applications/measurement-values-and-measuring-networks.html#param=messnetz-automatisch&station=${sid}`;
     $('owm-link').textContent = `🗺 MeteoSwiss ${sid}${elev}`;
+  } else if (s?.source === 'wunderground') {
+    $('owm-link').href        = `https://www.wunderground.com/dashboard/pws/${sid}`;
+    $('owm-link').textContent = `🗺 wunderground.com/pws/${sid}`;
   } else {
     $('owm-link').href        = `https://www.openwindmap.org/windbird-${sid}`;
     $('owm-link').textContent = `🗺 openwindmap.org/windbird-${sid}`;
@@ -1063,6 +1156,8 @@ async function fetchStation(idx) {
     let data;
     if (s.source === 'meteoswiss') {
       data = await fetchMSWStation(s.id);
+    } else if (s.source === 'wunderground') {
+      data = await fetchWUStation(s.id);
     } else {
       const json = await fetchWindData(s.id);
       data = json.data;
@@ -1176,8 +1271,8 @@ function checkThresholds(idx, data) {
 async function loadChart(hours, btn) {
   const s = stations[activeIdx];
   if (!s) return;
-  if (s.source === 'meteoswiss') {
-    $('chart-status').textContent = 'Verlaufsdaten für MeteoSwiss-Stationen nicht verfügbar';
+  if (s.source === 'meteoswiss' || s.source === 'wunderground') {
+    $('chart-status').textContent = `Verlaufsdaten für ${s.source === 'wunderground' ? 'Weather Underground' : 'MeteoSwiss'}-Stationen nicht verfügbar`;
     return;
   }
   s.chartHours = hours;
@@ -1431,6 +1526,7 @@ function selectOWM(id, name) {
 // ── Init ───────────────────────────────────────────────────────────────────────
 loadConfig();
 updateUnitUI();
+updateWUDropdown();
 renderTabs();
 loadStationPanel(stations[activeIdx]);
 if ('Notification' in window && Notification.permission === 'default' && $('n-notif').checked) {
