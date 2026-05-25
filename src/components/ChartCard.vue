@@ -94,9 +94,9 @@ async function changeRange(hours: number) {
   const s = stationsStore.activeStation
   if (!s) return
 
-  if (s.source === 'meteoswiss' || s.source === 'wunderground') {
+  if (s.source === 'wunderground') {
     destroyChart()
-    chartStatus.value = `Verlaufsdaten für ${s.source === 'wunderground' ? 'Weather Underground' : 'MeteoSwiss'}-Stationen nicht verfügbar`
+    chartStatus.value = 'Verlaufsdaten für Weather Underground-Stationen nicht verfügbar'
     return
   }
 
@@ -110,16 +110,16 @@ async function changeRange(hours: number) {
   }
 }
 
-// Watch for active station changes
+// Watch for active station changes (tab switch)
 watch(
   () => stationsStore.activeIdx,
   () => {
     const s = stationsStore.activeStation
     if (!s) return
     currentHours.value = s.chartHours ?? 24
-    if (s.source === 'meteoswiss' || s.source === 'wunderground') {
+    if (s.source === 'wunderground') {
       destroyChart()
-      chartStatus.value = `Verlaufsdaten für ${s.source === 'wunderground' ? 'Weather Underground' : 'MeteoSwiss'}-Stationen nicht verfügbar`
+      chartStatus.value = 'Verlaufsdaten für Weather Underground-Stationen nicht verfügbar'
       return
     }
     if (s.chartRows) {
@@ -129,6 +129,18 @@ watch(
       destroyChart()
       chartStatus.value = ''
     }
+  }
+)
+
+// Watch chartRows on active station — renders chart whenever data arrives (e.g. after initial fetch)
+watch(
+  () => stationsStore.activeStation?.chartRows,
+  (rows) => {
+    if (!rows) return
+    const s = stationsStore.activeStation
+    if (!s) return
+    renderChart(rows, s.chartHours ?? currentHours.value)
+    chartStatus.value = `${rows.length} Messpunkte`
   }
 )
 
@@ -147,8 +159,8 @@ onMounted(async () => {
   const s = stationsStore.activeStation
   if (!s) return
   currentHours.value = s.chartHours ?? 24
-  if (s.source === 'meteoswiss' || s.source === 'wunderground') {
-    chartStatus.value = `Verlaufsdaten für ${s.source === 'wunderground' ? 'Weather Underground' : 'MeteoSwiss'}-Stationen nicht verfügbar`
+  if (s.source === 'wunderground') {
+    chartStatus.value = 'Verlaufsdaten für Weather Underground-Stationen nicht verfügbar'
     return
   }
   if (s.chartRows) {

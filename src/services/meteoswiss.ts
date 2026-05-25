@@ -1,10 +1,14 @@
-import type { MSWStationMeta, WindData } from '../types'
+import type { MSWStationMeta, WindData, ChartRow } from '../types'
 
 export const MSW_CURRENT = 'https://data.geo.admin.ch/ch.meteoschweiz.messwerte-aktuell/VQHA80.csv'
 export const MSW_META    = 'https://data.geo.admin.ch/ch.meteoschweiz.ogd-smn/ogd-smn_meta_stations.csv'
+const MSW_ARCHIVE_BASE   = 'https://data.geo.admin.ch/ch.meteoschweiz.ogd-smn'
 
 // Cache: 9 minutes
 let mswCache: { ts: number; rows: Map<string, { dir: number | null; avg: number | null; max: number | null; date: string }> } | null = null
+
+// Archive cache: _recent files only update daily → cache 1 hour
+const mswRecentCache = new Map<string, { ts: number; text: string }>()
 let mswMetaMap: Map<string, MSWStationMeta> | null = null
 let mswMetaArr_: MSWStationMeta[] = []
 
@@ -68,6 +72,82 @@ export async function fetchMSWCurrent(): Promise<Map<string, { dir: number | nul
   }
   mswCache = { ts: now, rows }
   return rows
+}
+
+// ── Archive (10-min chart data) ──────────────────────────────────────────────
+
+function mswArchiveUrl(abbr: string, type: 'now' | 'recent'): string {
+  const a = abbr.toLowerCase()
+  return `${MSW_ARCHIVE_BASE}/${a}/ogd-smn_${a}_t_${type}.csv`
+}
+
+/** Parse "DD.MM.YYYY HH:MM" → Unix ms (local Swiss time treated as UTC+1/+2 by browser) */
+function parseMSWTimestamp(s: string): number {
+  const [datePart, timePart] = s.trim().split(' ')
+  if (!datePart || !timePart) return NaN
+  const [d, m, y] = datePart.split('.')
+  // MeteoSwiss timestamps are in UTC
+  return Date.UTC(+y, +m - 1, +d, +timePart.split(':')[0], +timePart.split(':')[1])
+}
+
+function parseMSWCsvToRows(text: string, since: number): ChartRow[] {
+  const lines  = text.trim().split('\n')
+  if (lines.length < 2) return []
+  const header = lines[0].split(';')
+  const tsIdx  = header.indexOf('reference_timestamp')
+  const avgIdx = header.indexOf('fu3010z0')
+  const maxIdx = header.indexOf('fu3010z1')
+  if (tsIdx < 0 || avgIdx < 0) return []
+
+  const rows: ChartRow[] = []
+  for (let i = 1; i < lines.length; i++) {
+    const c  = lines[i].split(';')
+    const ts = parseMSWTimestamp(c[tsIdx] ?? '')
+    if (isNaN(ts) || ts < since) continue
+    const avg = parseFloat(c[avgIdx])
+    const max = maxIdx >= 0 ? parseFloat(c[maxIdx]) : NaN
+    rows.push([
+      new Date(ts).toISOString(),
+      null, null,
+      isNaN(avg) ? null : avg,   // min (use avg — no min available)
+      isNaN(avg) ? null : avg,   // avg
+      isNaN(max) ? null : max,   // gust
+    ])
+  }
+  return rows
+}
+
+async function fetchMSWRecentText(abbr: string): Promise<string> {
+  const key    = abbr.toLowerCase()
+  const cached = mswRecentCache.get(key)
+  if (cached && Date.now() - cached.ts < 3_600_000) return cached.text
+  const r = await fetch(mswArchiveUrl(abbr, 'recent'))
+  if (!r.ok) throw new Error(`MeteoSwiss archive HTTP ${r.status}`)
+  const text = await r.text()
+  mswRecentCache.set(key, { ts: Date.now(), text })
+  return text
+}
+
+export async function fetchMSWArchive(abbr: string, hours: number): Promise<ChartRow[]> {
+  const since = Date.now() - hours * 3_600_000
+  // Fetch today's data (_now) and recent data in parallel
+  const [nowText, recentText] = await Promise.all([
+    fetch(mswArchiveUrl(abbr, 'now')).then(r => r.ok ? r.text() : ''),
+    fetchMSWRecentText(abbr),
+  ])
+  const combined = [
+    ...parseMSWCsvToRows(recentText, since),
+    ...parseMSWCsvToRows(nowText, since),
+  ]
+  // Sort by timestamp and deduplicate
+  combined.sort((a, b) => new Date(a[0] as string).getTime() - new Date(b[0] as string).getTime())
+  const seen = new Set<string>()
+  return combined.filter(r => {
+    const k = r[0] as string
+    if (seen.has(k)) return false
+    seen.add(k)
+    return true
+  })
 }
 
 export async function fetchMSWStation(abbr: string): Promise<WindData> {

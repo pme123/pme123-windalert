@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import type { Station, WindData, LogEntry, OWMStation } from '../types'
 import { useConfigStore } from './config'
 import { fetchWindData, fetchAllStations, fetchArchive } from '../services/pioupiou'
-import { fetchMSWStation, fetchMSWMeta, getMswMeta, getMswMetaArr } from '../services/meteoswiss'
+import { fetchMSWStation, fetchMSWMeta, fetchMSWArchive, getMswMeta, getMswMetaArr } from '../services/meteoswiss'
 import { fetchWUStation } from '../services/wunderground'
 import { useUnits } from '../composables/useUnits'
 
@@ -279,12 +279,14 @@ export const useStationsStore = defineStore('stations', () => {
   async function loadChartData(hours: number): Promise<void> {
     const s = stations.value[activeIdx.value]
     if (!s) return
-    if (s.source === 'meteoswiss' || s.source === 'wunderground') return
+    if (s.source === 'wunderground') return
     s.chartHours = hours
     const sid = s.id
     if (!sid) return
     try {
-      const rows = await fetchArchive(sid, hours)
+      const rows = s.source === 'meteoswiss'
+        ? await fetchMSWArchive(sid, hours)
+        : await fetchArchive(sid, hours)
       s.chartRows = rows
     } catch (e) {
       addLog('warn', `Verlaufsdaten Fehler: ${(e as Error).message}`)

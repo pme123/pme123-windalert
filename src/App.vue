@@ -44,12 +44,6 @@ onMounted(async () => {
 
   // Start polling
   stationsStore.restartPolling()
-
-  // Load initial chart for first station
-  const s = stationsStore.activeStation
-  if (s?.id && s.source === 'pioupiou') {
-    await stationsStore.loadChartData(s.chartHours ?? 24)
-  }
 })
 
 function onTabChanged(idx: number) {

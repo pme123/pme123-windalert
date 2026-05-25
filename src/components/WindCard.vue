@@ -13,7 +13,7 @@
       target="_blank"
       rel="noopener"
       style="font-size:.72rem;color:var(--accent);text-decoration:none;display:block;margin-bottom:8px"
-    >🗺 {{ owmLabel }}</a>
+    >{{ owmLabel }}</a>
     <div class="wind-main">
       <span class="wind-big">{{ fmtWind(m?.wind_speed_avg ?? null) }}</span>
       <span class="wind-unit">{{ unitLabel() }}</span>
@@ -65,12 +65,12 @@ const tsStr = computed(() => {
   if (!date) return 'Noch keine Daten'
   const d   = new Date(date)
   const age = Math.round((Date.now() - d.getTime()) / 60000)
-  return `📡 Sensor: ${d.toLocaleTimeString('de-CH',{hour:'2-digit',minute:'2-digit'})} (${age < 2 ? 'gerade eben' : `vor ${age} Min`})`
+  return `Sensor: ${d.toLocaleTimeString('de-CH',{hour:'2-digit',minute:'2-digit'})} (${age < 2 ? 'gerade eben' : `vor ${age} Min`})`
 })
 
 const fetchedStr = computed(() => {
   if (!m.value?.date) return ''
-  return `🔄 App-Abfrage: ${new Date().toLocaleTimeString('de-CH',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}`
+  return `App-Abfrage: ${new Date().toLocaleTimeString('de-CH',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}`
 })
 
 const owmHref = computed(() => {
