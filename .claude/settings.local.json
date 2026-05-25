@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:www.openwindmap.org)",
+      "WebFetch(domain:api.openwindmap.org)",
+      "WebFetch(domain:openwindmap.github.io)",
+      "WebFetch(domain:developers.pioupiou.fr)",
+      "WebFetch(domain:doc-v1.openwindmap.org)",
+      "WebFetch(domain:api.pioupiou.fr)",
+      "WebFetch(domain:app.windbird.eu)",
+      "Bash(open /Users/pme/dev/experiments/z9nai-wind-alert/index.html)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(grep -n \"^</div><!-- /grid\\\\|^</div>$\\\\|bottom-grid\\\\|^<script>\" /Users/pme/dev/experiments/z9nai-wind-alert/index.html)",
+      "WebFetch(domain:data.geo.admin.ch)",
+      "WebFetch(domain:opendatadocs.meteoswiss.ch)",
+      "Bash(curl -s --head \"https://data.geo.admin.ch/ch.meteoschweiz.messwerte-aktuell/VQHA80.csv\")",
+      "Bash(curl -s \"https://data.geo.admin.ch/ch.meteoschweiz.messwerte-aktuell/VQHA80.csv\")",
+      "Bash(curl -s --head \"https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-smn/items?limit=1\")",
+      "Bash(curl -s \"https://data.geo.admin.ch/ch.meteoschweiz.ogd-smn/ogd-smn_meta_stations.csv\")",
+      "Bash(curl -s --head -H \"Origin: https://pme123.github.io\" \"https://data.geo.admin.ch/ch.meteoschweiz.messwerte-aktuell/VQHA80.csv\")",
+      "Bash(curl -s --head -H \"Origin: https://pme123.github.io\" \"https://data.geo.admin.ch/ch.meteoschweiz.ogd-smn/ogd-smn_meta_stations.csv\")",
+      "Bash(curl -s \"https://data.geo.admin.ch/api/stac/v1/collections/ch.meteoschweiz.ogd-smn/items?limit=2\")",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s --head -H \"Origin: https://pme123.github.io\" \"https://api.weather.com/v2/pws/observations/current?stationId=IZURI26&format=json&units=m&apiKey=test\")",
+      "Bash(curl -s \"https://api.weather.com/v2/pws/observations/current?stationId=IZURI26&format=json&units=m&apiKey=test\")",
+      "Bash(curl -s -X OPTIONS -H \"Origin: https://pme123.github.io\" -H \"Access-Control-Request-Method: GET\" \"https://api.weather.com/v2/pws/observations/current?stationId=IZURI26&format=json&units=m&apiKey=test\" -v)",
+      "Bash('wa-\" /Users/pme/dev/experiments/z9nai-wind-alert/index.html | head -20)",
+      "Bash(grep -n \"function saveGlobal\\\\|wu.key\\\\|wa-phone\\\\|wa-key\\\\|$\\('wa-\" /Users/pme/dev/experiments/z9nai-wind-alert/index.html | head -20)"
+    ]
+  }
+}
