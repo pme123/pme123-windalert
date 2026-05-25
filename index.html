@@ -1053,10 +1053,19 @@ async function fetchWUStation(stationId) {
   const key = $('wu-key').value.trim();
   if (!key) throw new Error('Kein Weather Underground API Key konfiguriert');
   const url = `https://api.weather.com/v2/pws/observations/current?stationId=${encodeURIComponent(stationId)}&format=json&units=m&apiKey=${encodeURIComponent(key)}`;
-  const r   = await fetch(url);
-  if (!r.ok) throw new Error(`WU HTTP ${r.status}`);
-  const json = await r.json();
-  if (!json.observations?.length) throw new Error(`Station ${stationId} nicht gefunden oder keine Daten`);
+  const r    = await fetch(url);
+  const text = await r.text();
+  let json;
+  try {
+    json = JSON.parse(text);
+  } catch(e) {
+    throw new Error(`WU ${r.status}: ${text.slice(0, 120)}`);
+  }
+  if (!r.ok || json.errors) {
+    const msg = json.errors?.[0]?.error?.message || json.message || `HTTP ${r.status}`;
+    throw new Error(`WU: ${msg}`);
+  }
+  if (!json.observations?.length) throw new Error(`Station ${stationId} nicht gefunden / keine aktuellen Daten`);
   const obs = json.observations[0];
   return {
     id:   obs.stationID,
