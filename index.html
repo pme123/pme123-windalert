@@ -580,7 +580,25 @@
     <hr class="settings-sep">
 
     <!-- Weather Underground -->
-    <div class="settings-section-hd">Weather Underground</div>
+    <div class="settings-section-hd">
+      Weather Underground
+      <span class="info-icon" tabindex="0" style="margin-left:auto">?
+        <div class="info-tooltip">
+          <strong>Einrichtung</strong><br>
+          1. Konto erstellen auf <a href="https://www.wunderground.com" target="_blank" rel="noopener">wunderground.com</a><br>
+          2. API Key unter <em>My Profile → Settings → API Keys</em> generieren<br>
+          3. Key oben eintragen<br>
+          <hr>
+          <strong>Station suchen</strong><br>
+          Station-ID auf der Karte finden:<br>
+          → <a href="https://www.wunderground.com/wundermap" target="_blank" rel="noopener">wunderground.com/wundermap</a><br>
+          Station anklicken → ID z.B. <em>IHYRES96</em> erscheint im Panel<br>
+          <hr>
+          <strong>Station hinzufügen</strong><br>
+          ID in der Station-Suche eingeben (4–15 Zeichen) → <span style="color:#fb923c;font-weight:700">PWS</span>-Eintrag anklicken
+        </div>
+      </span>
+    </div>
     <div class="field">
       <label>API Key</label>
       <input type="text" id="wu-key" placeholder="z.B. a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
