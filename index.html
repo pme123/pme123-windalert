@@ -1041,7 +1041,30 @@ function selectMSWStation(abbr, name) {
 }
 
 // ── Weather Underground ────────────────────────────────────────────────────────
-function updateWUDropdown() { /* no-op – WU now integrated in filterOWM */ }
+function updateWUDropdown() { /* no-op */ }
+
+async function selectWUFromSearch(stationId) {
+  closeAllDropdowns();
+  addLog('info', `WU: Lade Station ${stationId}…`);
+  try {
+    const data = await fetchWUStation(stationId);
+    const name = data.meta.name;
+    const s    = stations[activeIdx];
+    s.id       = stationId;
+    s.name     = name;
+    s.source   = 'wunderground';
+    s.lastData = data;
+    $('owm-display').value        = `${name} (${stationId})`;
+    $('station-name').value       = name;
+    $('station-name').placeholder = name;
+    updateUI(data);
+    saveConfig();
+    renderTabs();
+    addLog('ok', `WU: ${name} (${stationId}) geladen`);
+  } catch(e) {
+    addLog('alert', `WU Fehler: ${e.message}`);
+  }
+}
 
 async function fetchWUStation(stationId) {
   const key = $('wu-key').value.trim();
@@ -1432,8 +1455,6 @@ async function openOWMDropdown() {
   setTimeout(() => $('owm-filter').focus(), 10);
 }
 
-let wuSearchTimer = null;
-
 function filterOWM(q) {
   if (!owmStations) return;
   const raw = q.trim();
@@ -1453,100 +1474,29 @@ function filterOWM(q) {
       : mswMetaArr)
     : [];
   owmFiltered = [...piou, ...msw.map(s => ({_msw: true, ...s}))];
-  renderOWMList(owmFiltered.slice(0, 80));
 
-  // WU nearby search: debounce 700ms
-  if (wuSearchTimer) clearTimeout(wuSearchTimer);
+  // WU: if key set and input looks like a station ID → offer as direct option
   const wuKey = $('wu-key').value.trim();
-  if (wuKey && raw.length >= 2) {
-    wuAppendLoading();
-    wuSearchTimer = setTimeout(() => searchWUNearby(raw), 700);
-  } else {
-    removeWURows();
+  if (wuKey && /^[A-Z0-9]{4,15}$/i.test(raw)) {
+    owmFiltered = [...owmFiltered, { _wu: true, id: raw.toUpperCase() }];
   }
-}
 
-function removeWURows() {
-  $('owm-list').querySelectorAll('.wu-row').forEach(e => e.remove());
-}
-
-function wuAppendLoading() {
-  removeWURows();
-  const div = document.createElement('div');
-  div.className = 'dd-empty wu-row';
-  div.textContent = '🔍 Suche Weather Underground Stationen…';
-  $('owm-list').appendChild(div);
-}
-
-async function searchWUNearby(q) {
-  const wuKey = $('wu-key').value.trim();
-  if (!wuKey) return;
-  removeWURows();
-  try {
-    // 1. Geocode via Nominatim
-    const geoR = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1&accept-language=de`,
-      { headers: { 'User-Agent': 'WindAlert/1.0' } }
-    );
-    const geo = await geoR.json();
-    if (!geo.length) return;
-    const { lat, lon } = geo[0];
-
-    // 2. WU nearby stations
-    const nearR = await fetch(
-      `https://api.weather.com/v2/pws/nearby?geocode=${lat},${lon}&radius=25&limit=20&apiKey=${encodeURIComponent(wuKey)}&format=json`
-    );
-    if (nearR.status === 204 || !nearR.ok) return;
-    const nearText = await nearR.text();
-    if (!nearText) return;
-    const near = JSON.parse(nearText);
-    const sts  = near.stations || [];
-    if (!sts.length) return;
-
-    // 3. Render section header + items into owm-list
-    const list = $('owm-list');
-    const hdr  = document.createElement('div');
-    hdr.className = 'dd-section-hd wu-row';
-    hdr.textContent = `Weather Underground – in der Nähe von ${geo[0].display_name.split(',')[0]}`;
-    list.appendChild(hdr);
-
-    sts.forEach(st => {
-      const div  = document.createElement('div');
-      div.className = 'dd-item wu-row';
-      const name = st.neighborhood || st.stationID;
-      const dist = st.distanceKm != null ? ` · ${st.distanceKm.toFixed(1)} km` : '';
-      div.innerHTML = `
-        <div>
-          <div class="dd-name">${name}</div>
-          <div class="dd-sub">${st.stationID}${dist}</div>
-        </div>
-        <div class="dd-badge wu">PWS</div>`;
-      div.onclick = () => selectWUFromSearch(st.stationID, name);
-      list.appendChild(div);
-    });
-  } catch(e) {
-    removeWURows();
-  }
-}
-
-function selectWUFromSearch(stationId, name) {
-  closeAllDropdowns();
-  const s  = stations[activeIdx];
-  s.id     = stationId;
-  s.name   = name;
-  s.source = 'wunderground';
-  $('owm-display').value        = `${name} (${stationId})`;
-  $('station-name').value       = name;
-  $('station-name').placeholder = name;
-  saveConfig();
-  renderTabs();
-  fetchNow();
+  renderOWMList(owmFiltered.slice(0, 81));
 }
 
 function renderOWMList(list) {
   const el = $('owm-list');
   if (!list.length) { el.innerHTML = '<div class="dd-empty">Keine Stationen gefunden</div>'; return; }
   el.innerHTML = list.map(s => {
+    if (s._wu) {
+      return `<div class="dd-item" onclick="selectWUFromSearch('${s.id}')">
+        <div>
+          <div class="dd-name">${s.id}</div>
+          <div class="dd-sub">Weather Underground – Station laden &amp; prüfen</div>
+        </div>
+        <div class="dd-badge wu">PWS</div>
+      </div>`;
+    }
     if (s._msw) {
       const elev = s.elevation ? ` · ${s.elevation} m` : '';
       return `<div class="dd-item" onclick="selectMSWStation('${s.abbr}','${s.name.replace(/'/g,"\\'")}')">
