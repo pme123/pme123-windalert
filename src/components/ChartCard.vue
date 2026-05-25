@@ -20,7 +20,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, watch, nextTick, onBeforeUnmount } from 'vue'
 import { Chart, registerables } from 'chart.js'
 import { useStationsStore } from '../stores/stations'
 import { useUnits } from '../composables/useUnits'
@@ -110,12 +110,16 @@ async function changeRange(hours: number) {
   }
 }
 
-// Watch for active station changes (tab switch)
+// Primary watch: fires immediately on setup AND whenever the active station or its ID changes.
+// This correctly handles the case where ChartCard mounts before App.vue calls loadStations():
+//   - immediate call: activeStation is null → skip
+//   - after loadStations(): id becomes available → load + render
+// Also handles tab switches and station ID changes in settings.
 watch(
-  () => stationsStore.activeIdx,
-  () => {
+  () => [stationsStore.activeIdx, stationsStore.activeStation?.id] as const,
+  async () => {
     const s = stationsStore.activeStation
-    if (!s) return
+    if (!s) { destroyChart(); chartStatus.value = ''; return }
     currentHours.value = s.chartHours ?? 24
     if (s.source === 'wunderground') {
       destroyChart()
@@ -123,53 +127,24 @@ watch(
       return
     }
     if (s.chartRows) {
-      renderChart(s.chartRows, s.chartHours)
+      await nextTick() // ensure canvas is in the DOM (important for immediate call)
+      renderChart(s.chartRows, s.chartHours ?? currentHours.value)
       chartStatus.value = `${s.chartRows.length} Messpunkte`
-    } else {
-      destroyChart()
-      chartStatus.value = ''
+    } else if (s.id) {
+      await changeRange(currentHours.value) // network request finishes after canvas is mounted
     }
-  }
+  },
+  { immediate: true }
 )
 
-// Watch chartRows on active station — renders chart whenever data arrives (e.g. after initial fetch)
-watch(
-  () => stationsStore.activeStation?.chartRows,
-  (rows) => {
-    if (!rows) return
-    const s = stationsStore.activeStation
-    if (!s) return
-    renderChart(rows, s.chartHours ?? currentHours.value)
-    chartStatus.value = `${rows.length} Messpunkte`
-  }
-)
-
-// Watch unit changes to re-render chart
+// Re-render when unit changes
 watch(
   () => unit.value,
   () => {
     const s = stationsStore.activeStation
-    if (s?.chartRows) {
-      renderChart(s.chartRows, s.chartHours)
-    }
+    if (s?.chartRows) renderChart(s.chartRows, s.chartHours ?? currentHours.value)
   }
 )
-
-onMounted(async () => {
-  const s = stationsStore.activeStation
-  if (!s) return
-  currentHours.value = s.chartHours ?? 24
-  if (s.source === 'wunderground') {
-    chartStatus.value = 'Verlaufsdaten für Weather Underground-Stationen nicht verfügbar'
-    return
-  }
-  if (s.chartRows) {
-    renderChart(s.chartRows, s.chartHours)
-    chartStatus.value = `${s.chartRows.length} Messpunkte`
-  } else if (s.id) {
-    await changeRange(currentHours.value)
-  }
-})
 
 onBeforeUnmount(() => { destroyChart() })
 </script>
