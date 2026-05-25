@@ -363,6 +363,8 @@
     .dd-name { font-size: .875rem; font-weight: 600; }
     .dd-sub  { font-size: .7rem; color: var(--muted); margin-top: 2px; }
     .dd-wind { font-size: .85rem; font-weight: 700; color: var(--accent); flex-shrink: 0; text-align: right; }
+    .dd-badge { font-size: .65rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; flex-shrink: 0; letter-spacing: .05em; }
+    .dd-badge.msw { background: rgba(16,185,129,.18); color: #34d399; border: 1px solid rgba(52,211,153,.3); }
     .dd-empty { padding: 20px; text-align: center; color: var(--muted); font-size: .82rem; }
   </style>
 </head>
@@ -598,6 +600,8 @@
 const API     = 'https://api.pioupiou.fr/v1/live/';
 const ARCHIVE = 'https://api.pioupiou.fr/v1/archive/';
 const DIRS    = ['N','NNO','NO','ONO','O','OSO','SO','SSO','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+const MSW_CURRENT = 'https://data.geo.admin.ch/ch.meteoschweiz.messwerte-aktuell/VQHA80.csv';
+const MSW_META    = 'https://data.geo.admin.ch/ch.meteoschweiz.ogd-smn/ogd-smn_meta_stations.csv';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
@@ -678,10 +682,15 @@ let smallIcon     = null;
 let owmStations = null;
 let owmFiltered = [];
 
+// MeteoSwiss cache
+let mswCache   = null;   // { ts, rows: Map<abbr, {dir,avg,max,date}> }
+let mswMeta    = null;   // Map<abbr, {abbr,name,canton,lat,lon,elevation}>
+let mswMetaArr = [];     // Array for search
+
 // ── Station factory ────────────────────────────────────────────────────────────
-function makeStation(id = '', name = '') {
+function makeStation(id = '', name = '', source = 'pioupiou') {
   return {
-    id, name,
+    id, name, source,   // source: 'pioupiou' | 'meteoswiss'
     tAvg: 20, tAvgOn: false,
     tMax: 40, tMaxOn: true,
     lastData: null, lastAlertAt: 0,
@@ -733,7 +742,7 @@ function loadConfig() {
 
 function saveConfig() {
   localStorage.setItem('waCfg2', JSON.stringify({
-    stations: stations.map(({id, name, tAvg, tAvgOn, tMax, tMaxOn, lastAlertAt}) => ({id, name, tAvg, tAvgOn, tMax, tMaxOn, lastAlertAt})),
+    stations: stations.map(({id, name, source, tAvg, tAvgOn, tMax, tMaxOn, lastAlertAt}) => ({id, name, source: source||'pioupiou', tAvg, tAvgOn, tMax, tMaxOn, lastAlertAt})),
     activeIdx,
     phone:   $('wa-phone').value,
     key:     $('wa-key').value,
@@ -912,6 +921,101 @@ function removeStation(idx) {
 }
 
 // ── Wind data fetch ────────────────────────────────────────────────────────────
+// ── MeteoSwiss ─────────────────────────────────────────────────────────────────
+async function fetchMSWMeta() {
+  if (mswMeta) return;
+  try {
+    const r    = await fetch(MSW_META);
+    const text = await r.text();
+    const lines = text.trim().split('\n');
+    mswMeta    = new Map();
+    mswMetaArr = [];
+    for (let i = 1; i < lines.length; i++) {
+      const c = lines[i].split(';');
+      const abbr = c[0]?.trim();
+      if (!abbr) continue;
+      const obj = {
+        abbr,
+        name:      c[1]?.trim() || abbr,
+        canton:    c[2]?.trim() || '',
+        elevation: parseFloat(c[10]) || null,
+        lat:       parseFloat(c[14]),
+        lon:       parseFloat(c[15]),
+      };
+      mswMeta.set(abbr, obj);
+      mswMetaArr.push(obj);
+    }
+    addLog('info', `MeteoSwiss: ${mswMetaArr.length} Stationen geladen`);
+  } catch(e) {
+    addLog('warn', `MeteoSwiss Metadaten Fehler: ${e.message}`);
+  }
+}
+
+async function fetchMSWCurrent() {
+  const now = Date.now();
+  if (mswCache && now - mswCache.ts < 9 * 60 * 1000) return mswCache.rows;
+  const r    = await fetch(MSW_CURRENT);
+  const text = await r.text();
+  const lines = text.trim().split('\n');
+  // cols: 0=abbr 1=date 2=temp ... 8=dir 9=avg_kmh 10=max_kmh
+  const rows = new Map();
+  for (let i = 1; i < lines.length; i++) {
+    const c   = lines[i].split(';');
+    const abbr = c[0]?.trim();
+    if (!abbr) continue;
+    const ds  = c[1]?.trim() || '';
+    const date = ds.length === 12
+      ? `${ds.slice(0,4)}-${ds.slice(4,6)}-${ds.slice(6,8)}T${ds.slice(8,10)}:${ds.slice(10,12)}:00.000Z`
+      : new Date().toISOString();
+    const dir = parseFloat(c[8]);
+    const avg = parseFloat(c[9]);
+    const max = parseFloat(c[10]);
+    rows.set(abbr, {
+      date,
+      dir: isNaN(dir) ? null : dir,
+      avg: isNaN(avg) ? null : avg,
+      max: isNaN(max) ? null : max,
+    });
+  }
+  mswCache = { ts: now, rows };
+  return rows;
+}
+
+async function fetchMSWStation(abbr) {
+  const rows = await fetchMSWCurrent();
+  const row  = rows.get(abbr);
+  if (!row) throw new Error(`MeteoSwiss Station ${abbr} nicht in Daten gefunden`);
+  const meta = mswMeta?.get(abbr);
+  return {
+    id:   abbr,
+    meta: { name: meta?.name || abbr },
+    location: (meta?.lat && !isNaN(meta.lat))
+      ? { latitude: meta.lat, longitude: meta.lon, success: true }
+      : { success: false },
+    measurements: {
+      date:            row.date,
+      wind_heading:    row.dir,
+      wind_speed_avg:  row.avg,
+      wind_speed_max:  row.max,
+      wind_speed_min:  null,
+    },
+  };
+}
+
+function selectMSWStation(abbr, name) {
+  closeAllDropdowns();
+  const s   = stations[activeIdx];
+  s.id      = abbr;
+  s.name    = name;
+  s.source  = 'meteoswiss';
+  $('owm-display').value    = `${name} (${abbr})`;
+  $('station-name').value   = name;
+  $('station-name').placeholder = name;
+  saveConfig();
+  renderTabs();
+  fetchNow();
+}
+
 async function fetchWindData(sid) {
   const r = await fetch(API + sid);
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -921,8 +1025,16 @@ async function fetchWindData(sid) {
 function updateUI(data) {
   const m   = data.measurements;
   const sid = data.id;
-  $('owm-link').href        = `https://www.openwindmap.org/windbird-${sid}`;
-  $('owm-link').textContent = `🗺 openwindmap.org/windbird-${sid}`;
+  const s   = stations[activeIdx];
+  if (s?.source === 'meteoswiss') {
+    const meta = mswMeta?.get(sid);
+    const elev = meta?.elevation ? ` · ${meta.elevation} m ü.M.` : '';
+    $('owm-link').href        = `https://www.meteoswiss.admin.ch/services-and-publications/applications/measurement-values-and-measuring-networks.html#param=messnetz-automatisch&station=${sid}`;
+    $('owm-link').textContent = `🗺 MeteoSwiss ${sid}${elev}`;
+  } else {
+    $('owm-link').href        = `https://www.openwindmap.org/windbird-${sid}`;
+    $('owm-link').textContent = `🗺 openwindmap.org/windbird-${sid}`;
+  }
   $('w-avg').textContent    = fmtWind(m.wind_speed_avg);
   $('w-min').textContent    = fmtWind(m.wind_speed_min);
   $('w-max').textContent    = fmtWind(m.wind_speed_max);
@@ -947,22 +1059,28 @@ async function fetchStation(idx) {
   const s = stations[idx];
   if (!s?.id) return;
   try {
-    const json = await fetchWindData(s.id);
-    s.lastData = json.data;
-    checkThresholds(idx, s.lastData);   // sets s.status
+    let data;
+    if (s.source === 'meteoswiss') {
+      data = await fetchMSWStation(s.id);
+    } else {
+      const json = await fetchWindData(s.id);
+      data = json.data;
+      // Auto-name from Pioupiou API on first load
+      if (!s.name && data.meta?.name) {
+        s.name = data.meta.name;
+        if (idx === activeIdx) {
+          $('owm-display').value        = `${s.name} (${s.id})`;
+          $('station-name').placeholder = s.name;
+        }
+        saveConfig();
+        renderTabs();
+      }
+    }
+    s.lastData = data;
+    checkThresholds(idx, s.lastData);
     if (idx === activeIdx) {
       updateUI(s.lastData);
       setBadgeForStatus(s.status);
-    }
-    // Auto-name from API on first load
-    if (!s.name && json.data.meta?.name) {
-      s.name = json.data.meta.name;
-      if (idx === activeIdx) {
-        $('owm-display').value        = `${s.name} (${s.id})`;
-        $('station-name').placeholder = s.name;
-      }
-      saveConfig();
-      renderTabs();
     }
   } catch(e) {
     s.status = 'err';
@@ -1057,6 +1175,10 @@ function checkThresholds(idx, data) {
 async function loadChart(hours, btn) {
   const s = stations[activeIdx];
   if (!s) return;
+  if (s.source === 'meteoswiss') {
+    $('chart-status').textContent = 'Verlaufsdaten für MeteoSwiss-Stationen nicht verfügbar';
+    return;
+  }
   s.chartHours = hours;
   document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
@@ -1213,7 +1335,7 @@ document.addEventListener('click', e => {
 
 async function loadOWMStations() {
   if (owmStations) return;
-  $('owm-list').innerHTML = '<div class="dd-empty">Lade ~500 Stationen…</div>';
+  $('owm-list').innerHTML = '<div class="dd-empty">Lade Stationen…</div>';
   try {
     const r    = await fetch('https://api.pioupiou.fr/v1/live/all');
     const json = await r.json();
@@ -1224,6 +1346,7 @@ async function loadOWMStations() {
   } catch(e) {
     $('owm-list').innerHTML = `<div class="dd-empty">Fehler: ${e.message}</div>`;
   }
+  await fetchMSWMeta();
 }
 
 async function openOWMDropdown() {
@@ -1238,19 +1361,38 @@ async function openOWMDropdown() {
 function filterOWM(q) {
   if (!owmStations) return;
   q = q.toLowerCase().trim();
-  owmFiltered = q
+  const piou = q
     ? owmStations.filter(s =>
         s.meta.name.toLowerCase().includes(q) ||
         String(s.id).includes(q) ||
         (s.location?.latitude?.toFixed(2) + ' ' + s.location?.longitude?.toFixed(2)).includes(q))
     : owmStations;
-  renderOWMList(owmFiltered.slice(0, 60));
+  const msw = mswMetaArr.length
+    ? (q
+      ? mswMetaArr.filter(s =>
+          s.name.toLowerCase().includes(q) ||
+          s.abbr.toLowerCase().includes(q) ||
+          s.canton.toLowerCase().includes(q))
+      : mswMetaArr)
+    : [];
+  owmFiltered = [...piou, ...msw.map(s => ({_msw: true, ...s}))];
+  renderOWMList(owmFiltered.slice(0, 80));
 }
 
 function renderOWMList(list) {
   const el = $('owm-list');
   if (!list.length) { el.innerHTML = '<div class="dd-empty">Keine Stationen gefunden</div>'; return; }
   el.innerHTML = list.map(s => {
+    if (s._msw) {
+      const elev = s.elevation ? ` · ${s.elevation} m` : '';
+      return `<div class="dd-item" onclick="selectMSWStation('${s.abbr}','${s.name.replace(/'/g,"\\'")}')">
+        <div>
+          <div class="dd-name">${s.name}</div>
+          <div class="dd-sub">${s.abbr} · ${s.canton}${elev}</div>
+        </div>
+        <div class="dd-badge msw">MSW</div>
+      </div>`;
+    }
     const name   = s.meta.name;
     const avg    = s.measurements?.wind_speed_avg;
     const gust   = s.measurements?.wind_speed_max;
@@ -1273,6 +1415,7 @@ function selectOWM(id, name) {
   if (!s) return;
   s.id     = String(id);
   s.name   = name;
+  s.source = 'pioupiou';
   s.status = 'off';
   $('owm-display').value        = `${name} (${id})`;
   $('station-name').value       = name;
