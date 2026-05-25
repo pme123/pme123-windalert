@@ -38,7 +38,6 @@ const coordsText = computed(() => {
 function initMap(lat: number, lon: number) {
   if (!mapEl.value) return
   if (!leafletMap) {
-    loading.value = true
     leafletMap = L.map(mapEl.value, { zoomControl: true }).setView([lat, lon], 10)
     tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
       attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a> © <a href="https://carto.com/attributions">CARTO</a>',
@@ -71,9 +70,11 @@ watch(
   [() => props.lat, () => props.lon, visible],
   async ([lat, lon, vis]) => {
     if (!vis || lat == null || lon == null) return
-    await nextTick()
-    // Give the DOM a moment to show the map container before Leaflet measures it
-    await new Promise(r => setTimeout(r, 50))
+    if (!leafletMap) {
+      loading.value = true      // set BEFORE nextTick so Vue renders spinner first
+      await nextTick()          // Vue renders spinner + map container
+      await new Promise(r => setTimeout(r, 50))  // layout settles
+    }
     initMap(lat, lon)
   },
   { immediate: true }
