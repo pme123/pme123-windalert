@@ -523,8 +523,15 @@
                 oninput="filterOWM(this.value)" onkeydown="if(event.key==='Escape')closeAllDropdowns()">
             </div>
             <div class="dd-list" id="owm-list"><div class="dd-empty">Wird geladen…</div></div>
-            <div id="wu-dd-section" style="display:none">
-              <input type="hidden" id="wu-id-input">
+            <div id="wu-dd-section" style="display:none;border-top:1px solid var(--border);padding:10px 12px;background:rgba(251,146,60,.06)">
+              <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#fb923c;margin-bottom:8px">Weather Underground – Station ID eingeben</div>
+              <div style="display:flex;gap:6px">
+                <input type="text" id="wu-id-input" placeholder="z.B. IZURI26"
+                  style="flex:1;font-size:.82rem;text-transform:uppercase"
+                  oninput="this.value=this.value.toUpperCase()"
+                  onkeydown="if(event.key==='Enter')loadWUStation()">
+                <button class="btn-secondary" style="padding:5px 12px;font-size:.78rem;flex-shrink:0;border-color:#fb923c;color:#fb923c" onclick="loadWUStation()">Laden</button>
+              </div>
             </div>
           </div>
         </div>
@@ -1481,27 +1488,13 @@ function filterOWM(q) {
       : mswMetaArr)
     : [];
   owmFiltered = [...piou, ...msw.map(s => ({_msw: true, ...s}))];
-  // WU shortcut: if key set and text looks like a station ID, append as direct option
-  const wuKey = $('wu-key').value.trim();
-  if (wuKey && raw.length >= 3) {
-    owmFiltered = [...owmFiltered, { _wu: true, id: raw.toUpperCase() }];
-  }
-  renderOWMList(owmFiltered.slice(0, 81));
+  renderOWMList(owmFiltered.slice(0, 80));
 }
 
 function renderOWMList(list) {
   const el = $('owm-list');
   if (!list.length) { el.innerHTML = '<div class="dd-empty">Keine Stationen gefunden</div>'; return; }
   el.innerHTML = list.map(s => {
-    if (s._wu) {
-      return `<div class="dd-item" onclick="$('wu-id-input').value='${s.id}';loadWUStation()">
-        <div>
-          <div class="dd-name">${s.id}</div>
-          <div class="dd-sub">Weather Underground PWS laden…</div>
-        </div>
-        <div class="dd-badge wu">PWS</div>
-      </div>`;
-    }
     if (s._msw) {
       const elev = s.elevation ? ` · ${s.elevation} m` : '';
       return `<div class="dd-item" onclick="selectMSWStation('${s.abbr}','${s.name.replace(/'/g,"\\'")}')">
