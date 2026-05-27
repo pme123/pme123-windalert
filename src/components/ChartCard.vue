@@ -146,5 +146,13 @@ watch(
   }
 )
 
-onBeforeUnmount(() => { destroyChart() })
+// Refresh chart data every 15 minutes
+const chartRefreshTimer = setInterval(() => {
+  const s = stationsStore.activeStation
+  if (s?.id && s.source !== 'wunderground') {
+    changeRange(currentHours.value)
+  }
+}, 15 * 60 * 1000)
+
+onBeforeUnmount(() => { destroyChart(); clearInterval(chartRefreshTimer) })
 </script>
