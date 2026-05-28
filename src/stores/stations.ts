@@ -37,9 +37,10 @@ export const useStationsStore = defineStore('stations', () => {
   const activeIdx = ref(0)
   const log       = ref<LogEntry[]>([{ id: ++logIdCounter, type: 'info', msg: 'Bereit.', time: '--:--' }])
 
-  let pollTimer: ReturnType<typeof setInterval> | null = null
-  let cdTimer:   ReturnType<typeof setInterval> | null = null
-  const nextAt   = ref<number | null>(null)
+  let pollTimer:  ReturnType<typeof setInterval> | null = null
+  let cdTimer:    ReturnType<typeof setInterval> | null = null
+  let chartTimer: ReturnType<typeof setInterval> | null = null
+  const nextAt    = ref<number | null>(null)
   const countdown = ref('')
 
   // WhatsApp send
@@ -238,9 +239,34 @@ export const useStationsStore = defineStore('stations', () => {
     await Promise.all(stations.value.map((_, i) => fetchStation(i)))
   }
 
+  async function refreshAllCharts() {
+    const results = await Promise.allSettled(
+      stations.value.map(s => {
+        if (!s.id || s.source === 'wunderground') return Promise.resolve()
+        const idx = stations.value.indexOf(s)
+        return loadChartData_forStation(idx, s.chartHours ?? 24)
+      })
+    )
+    const failed = results.filter(r => r.status === 'rejected').length
+    if (failed) addLog('warn', `Verlauf-Refresh: ${failed} Station(en) fehlgeschlagen`)
+    else addLog('info', `Verlauf aktualisiert (${stations.value.filter(s => s.id && s.source !== 'wunderground').length} Stationen)`)
+  }
+
+  // Internal: load chart data for a specific station by index
+  async function loadChartData_forStation(idx: number, hours: number): Promise<void> {
+    const s = stations.value[idx]
+    if (!s?.id || s.source === 'wunderground') return
+    s.chartHours = hours
+    const rows = s.source === 'meteoswiss'
+      ? await fetchMSWArchive(s.id, hours)
+      : await fetchArchive(s.id, hours)
+    s.chartRows = rows
+  }
+
   function restartPolling() {
-    if (pollTimer) clearInterval(pollTimer)
-    if (cdTimer)   clearInterval(cdTimer)
+    if (pollTimer)  clearInterval(pollTimer)
+    if (cdTimer)    clearInterval(cdTimer)
+    if (chartTimer) clearInterval(chartTimer)
     const iv = configStore.iv
     pollAll()
     nextAt.value = Date.now() + iv
@@ -253,6 +279,8 @@ export const useStationsStore = defineStore('stations', () => {
       const s = Math.max(0, Math.round((nextAt.value - Date.now()) / 1000))
       countdown.value = `↺ in ${s}s`
     }, 1000)
+    // Refresh chart data every 15 minutes for all stations
+    chartTimer = setInterval(() => { refreshAllCharts() }, 15 * 60 * 1000)
   }
 
   // Tab management
@@ -275,19 +303,13 @@ export const useStationsStore = defineStore('stations', () => {
     saveConfig()
   }
 
-  // Load chart data
+  // Load chart data for the active station
   async function loadChartData(hours: number): Promise<void> {
-    const s = stations.value[activeIdx.value]
-    if (!s) return
-    if (s.source === 'wunderground') return
-    s.chartHours = hours
-    const sid = s.id
-    if (!sid) return
+    const idx = activeIdx.value
+    const s   = stations.value[idx]
+    if (!s?.id || s.source === 'wunderground') return
     try {
-      const rows = s.source === 'meteoswiss'
-        ? await fetchMSWArchive(sid, hours)
-        : await fetchArchive(sid, hours)
-      s.chartRows = rows
+      await loadChartData_forStation(idx, hours)
     } catch (e) {
       addLog('warn', `Verlaufsdaten Fehler: ${(e as Error).message}`)
     }

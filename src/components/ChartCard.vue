@@ -146,13 +146,15 @@ watch(
   }
 )
 
-// Refresh chart data every 15 minutes
-const chartRefreshTimer = setInterval(() => {
-  const s = stationsStore.activeStation
-  if (s?.id && s.source !== 'wunderground') {
-    changeRange(currentHours.value)
+// Re-render when store updates chartRows in the background (15-min auto-refresh)
+watch(
+  () => stationsStore.activeStation?.chartRows,
+  (rows) => {
+    if (!rows || !rows.length) return
+    renderChart(rows, currentHours.value)
+    chartStatus.value = `${rows.length} Messpunkte`
   }
-}, 15 * 60 * 1000)
+)
 
-onBeforeUnmount(() => { destroyChart(); clearInterval(chartRefreshTimer) })
+onBeforeUnmount(() => { destroyChart() })
 </script>
