@@ -27,7 +27,11 @@
       "Bash(curl -s \"https://api.weather.com/v2/pws/observations/current?stationId=IZURI26&format=json&units=m&apiKey=test\")",
       "Bash(curl -s -X OPTIONS -H \"Origin: https://pme123.github.io\" -H \"Access-Control-Request-Method: GET\" \"https://api.weather.com/v2/pws/observations/current?stationId=IZURI26&format=json&units=m&apiKey=test\" -v)",
       "Bash('wa-\" /Users/pme/dev/experiments/z9nai-wind-alert/index.html | head -20)",
-      "Bash(grep -n \"function saveGlobal\\\\|wu.key\\\\|wa-phone\\\\|wa-key\\\\|$\\('wa-\" /Users/pme/dev/experiments/z9nai-wind-alert/index.html | head -20)"
+      "Bash(grep -n \"function saveGlobal\\\\|wu.key\\\\|wa-phone\\\\|wa-key\\\\|$\\('wa-\" /Users/pme/dev/experiments/z9nai-wind-alert/index.html | head -20)",
+      "Bash(git rm *)",
+      "Bash(npm run *)",
+      "Bash(find /Users/pme/dev/Github/pme123/pme123-weather -name \"*.vue\" | xargs grep -l -i \"datenschutz\" 2>/dev/null)",
+      "mcp__Claude_in_Chrome__computer"
     ]
   }
 }
