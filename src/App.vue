@@ -3,20 +3,29 @@
 
   <div class="app-wrap">
     <AppHeader />
-    <TabBar @tab-changed="onTabChanged" @station-added="onStationAdded" />
-    <StationPanel />
+    <TabBar
+      :map-active="showMap"
+      @map-clicked="showMap = true"
+      @tab-changed="onTabChanged"
+      @station-added="onStationAdded"
+    />
 
-    <div class="bottom-grid">
-      <SettingsCard />
-      <LogCard />
-    </div>
+    <MapOverview v-if="showMap" @open-station="showMap = false" />
+
+    <template v-else>
+      <StationPanel />
+      <div class="bottom-grid">
+        <SettingsCard />
+        <LogCard />
+      </div>
+    </template>
   </div>
 
   <AppFooter />
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useConfigStore } from './stores/config'
 import { useStationsStore } from './stores/stations'
 
@@ -27,34 +36,32 @@ import TabBar       from './components/TabBar.vue'
 import StationPanel from './components/StationPanel.vue'
 import SettingsCard from './components/SettingsCard.vue'
 import LogCard      from './components/LogCard.vue'
+import MapOverview  from './components/MapOverview.vue'
 
 const configStore   = useConfigStore()
 const stationsStore = useStationsStore()
+const showMap       = ref(true)
 
 onMounted(async () => {
-  // Load config first (unit, phone, etc.)
   configStore.loadConfig()
-  // Load stations from localStorage
   stationsStore.loadStations()
 
-  // Request notification permission if needed
   if ('Notification' in window && Notification.permission === 'default' && configStore.nNotif) {
     Notification.requestPermission()
   }
 
-  // Start polling
   stationsStore.restartPolling()
 })
 
 function onTabChanged(idx: number) {
+  showMap.value = false
   const s = stationsStore.stations[idx]
-  // Load chart if not yet loaded for this tab
   if (!s.chartRows && s.id && s.source === 'pioupiou') {
     stationsStore.loadChartData(s.chartHours ?? 24)
   }
 }
 
 function onStationAdded() {
-  // Focus handled inside StationSelector via watch
+  showMap.value = false
 }
 </script>

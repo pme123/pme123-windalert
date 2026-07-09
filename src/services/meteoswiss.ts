@@ -23,7 +23,8 @@ export function getMswMeta(): Map<string, MSWStationMeta> | null {
 export async function fetchMSWMeta(): Promise<void> {
   if (mswMetaMap) return
   const r    = await fetch(MSW_META)
-  const text = await r.text()
+  const buf  = await r.arrayBuffer()
+  const text = new TextDecoder('windows-1252').decode(buf)
   const lines = text.trim().split('\n')
   mswMetaMap  = new Map()
   mswMetaArr_ = []

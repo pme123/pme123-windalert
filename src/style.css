@@ -222,6 +222,19 @@ h1 { font-size: 1.5rem; font-weight: 800; color: var(--accent); }
   transition: border-color .15s, color .15s;
 }
 .tab-add:hover { border-color: var(--accent); color: var(--accent); }
+.tab-map { display: flex; align-items: center; gap: 6px; }
+
+/* ── Map Overview ── */
+.map-overview-wrap {
+  border: 1px solid var(--border);
+  border-radius: 0 8px 8px 8px;
+  overflow: hidden;
+}
+.map-overview-el {
+  height: calc(100vh - 180px);
+  min-height: 400px;
+  width: 100%;
+}
 
 /* ── Station panel ── */
 .station-panel {

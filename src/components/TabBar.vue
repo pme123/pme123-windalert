@@ -1,10 +1,18 @@
 <template>
   <div class="tabs">
+    <button class="tab tab-map" :class="{ active: mapActive }" @click="handleMapClick">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+           fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
+        <line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/>
+      </svg>
+      Karte
+    </button>
     <button
       v-for="(s, i) in stationsStore.stations"
       :key="i"
       class="tab"
-      :class="{ active: i === stationsStore.activeIdx }"
+      :class="{ active: !mapActive && i === stationsStore.activeIdx }"
       @click="handleTabClick(i)"
     >
       <span class="tab-dot" :class="s.status"></span>
@@ -23,12 +31,19 @@
 <script setup lang="ts">
 import { useStationsStore } from '../stores/stations'
 
+const props = defineProps<{ mapActive: boolean }>()
+
 const emit = defineEmits<{
   (e: 'tab-changed', idx: number): void
   (e: 'station-added'): void
+  (e: 'map-clicked'): void
 }>()
 
 const stationsStore = useStationsStore()
+
+function handleMapClick() {
+  emit('map-clicked')
+}
 
 function handleTabClick(idx: number) {
   stationsStore.switchTab(idx)

@@ -291,6 +291,21 @@ export const useStationsStore = defineStore('stations', () => {
     saveConfig()
   }
 
+  function openStationInNewTab(id: string, name: string, source: Station['source']) {
+    const existing = stations.value.findIndex(s => s.id === id && s.source === source)
+    if (existing >= 0) {
+      activeIdx.value = existing
+      saveConfig()
+      return
+    }
+    const s = makeStation(id, name, source)
+    stations.value.push(s)
+    activeIdx.value = stations.value.length - 1
+    saveConfig()
+    fetchStation(activeIdx.value)
+    if (source !== 'wunderground') loadChartData(s.chartHours ?? 24)
+  }
+
   function removeStation(idx: number) {
     if (stations.value.length <= 1) return
     stations.value.splice(idx, 1)
@@ -427,6 +442,7 @@ export const useStationsStore = defineStore('stations', () => {
     addLog,
     clearLog,
     addStation,
+    openStationInNewTab,
     removeStation,
     switchTab,
     loadChartData,
