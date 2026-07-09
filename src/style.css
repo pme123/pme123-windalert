@@ -127,6 +127,30 @@ body {
 .privacy-body a:hover { text-decoration: underline; }
 .privacy-body hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
 .privacy-intro { color: var(--fg); }
+
+/* ── Generic Modal (Settings / Log) ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+  display: flex; align-items: center; justify-content: center; z-index: 1000;
+}
+.modal-box {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; width: min(560px, 92vw); max-height: 85vh;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.modal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 20px; font-weight: 700; font-size: .95rem;
+  border-bottom: 1px solid var(--border);
+}
+.modal-close {
+  background: none; border: none; cursor: pointer;
+  color: var(--muted); font-size: 1rem; padding: 0 4px;
+  transition: color .2s;
+}
+.modal-close:hover { color: var(--fg); }
+.modal-body { padding: 20px; overflow-y: auto; }
+.modal-body .bottom-card { padding: 0; border: none; }
 .privacy-footer-text { font-size: .75rem; color: rgba(255,255,255,0.25); font-family: 'Courier New', monospace; }
 
 /* ── Header ── */
@@ -148,6 +172,23 @@ h1 { font-size: 1.5rem; font-weight: 800; color: var(--accent); }
 .nav-link:hover { color: var(--accent); }
 .nav-link-icon { padding: 2px; }
 .nav-separator { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
+.icon-btn {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: none; cursor: pointer; padding: 2px;
+  color: var(--muted); transition: color .2s;
+}
+.icon-btn:hover { color: var(--accent); }
+.icon-btn[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--fg); font-size: .7rem; font-weight: 600;
+  padding: 4px 8px; border-radius: 6px; white-space: nowrap;
+  opacity: 0; pointer-events: none; transition: opacity .15s;
+  z-index: 20;
+}
+.icon-btn[data-tip]:hover::after { opacity: 1; }
 .header-status { display: flex; align-items: center; gap: 12px; }
 .countdown { font-size: .72rem; color: var(--muted); }
 

@@ -1,7 +1,6 @@
 <template>
   <div class="bottom-card">
-    <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <span>Protokoll</span>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
       <button class="btn-secondary" style="padding:3px 10px;font-size:.7rem" @click="stationsStore.clearLog()">Löschen</button>
     </div>
     <div class="log">

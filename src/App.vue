@@ -2,7 +2,7 @@
   <AlertBanner />
 
   <div class="app-wrap">
-    <AppHeader />
+    <AppHeader @open-log="showLog = true" @open-settings="showSettings = true" />
     <TabBar
       :map-active="showMap"
       @map-clicked="showMap = true"
@@ -12,13 +12,31 @@
 
     <MapOverview v-if="showMap" @open-station="showMap = false" />
 
-    <template v-else>
-      <StationPanel />
-      <div class="bottom-grid">
+    <StationPanel v-else />
+  </div>
+
+  <div v-if="showSettings" class="modal-overlay" @click.self="showSettings = false">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span>Einstellungen</span>
+        <button class="modal-close" @click="showSettings = false">✕</button>
+      </div>
+      <div class="modal-body">
         <SettingsCard />
+      </div>
+    </div>
+  </div>
+
+  <div v-if="showLog" class="modal-overlay" @click.self="showLog = false">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span>Protokoll</span>
+        <button class="modal-close" @click="showLog = false">✕</button>
+      </div>
+      <div class="modal-body">
         <LogCard />
       </div>
-    </template>
+    </div>
   </div>
 
   <AppFooter />
@@ -41,6 +59,8 @@ import MapOverview  from './components/MapOverview.vue'
 const configStore   = useConfigStore()
 const stationsStore = useStationsStore()
 const showMap       = ref(true)
+const showSettings  = ref(false)
+const showLog       = ref(false)
 
 onMounted(async () => {
   configStore.loadConfig()

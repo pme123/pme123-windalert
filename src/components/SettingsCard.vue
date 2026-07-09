@@ -1,7 +1,5 @@
 <template>
   <div class="bottom-card">
-    <div class="card-title" style="margin-bottom:16px">Einstellungen</div>
-
     <!-- WhatsApp -->
     <div class="settings-section-hd">
       WhatsApp Alert
