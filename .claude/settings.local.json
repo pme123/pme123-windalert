@@ -33,7 +33,10 @@
       "Bash(find /Users/pme/dev/Github/pme123/pme123-weather -name \"*.vue\" | xargs grep -l -i \"datenschutz\" 2>/dev/null)",
       "mcp__Claude_in_Chrome__computer",
       "mcp__claude-in-chrome__computer",
-      "mcp__claude-in-chrome__navigate"
+      "mcp__claude-in-chrome__navigate",
+      "Bash(curl -sS -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173/pme123-windalert/)",
+      "Bash(nohup npm run dev)",
+      "Bash(curl -sS -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173/)"
     ]
   }
 }

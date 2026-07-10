@@ -481,6 +481,18 @@ button:active { transform: scale(.97); }
 .dd-section-hd { padding: 8px 14px 4px; font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); border-top: 1px solid var(--border); background: var(--bg); }
 .settings-sep { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
 .settings-section-hd { font-size: .82rem; font-weight: 700; color: var(--text); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.settings-note { font-size: .8rem; color: var(--muted); }
+.folder-sync-row {
+  display: flex; justify-content: space-between; align-items: center;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 14px; gap: 12px; flex-wrap: wrap;
+}
+.folder-sync-info { display: flex; align-items: center; gap: 8px; font-size: .82rem; color: var(--text); }
+.folder-sync-actions { display: flex; gap: 8px; }
+.folder-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.folder-dot.connected        { background: var(--green); }
+.folder-dot.needs-permission { background: var(--yellow); }
+.folder-status-label { font-size: .72rem; color: var(--muted); }
 .wu-id-row { display: flex; gap: 6px; }
 .wu-id-row input { flex: 1; }
 .wu-id-row button { flex-shrink: 0; }

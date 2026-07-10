@@ -63,6 +63,7 @@ const showSettings  = ref(false)
 const showLog       = ref(false)
 
 onMounted(async () => {
+  await configStore.initFolderSync()
   configStore.loadConfig()
   stationsStore.loadStations()
 

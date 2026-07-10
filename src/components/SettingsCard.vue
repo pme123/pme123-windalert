@@ -65,6 +65,46 @@
         @change="save"
       />
     </div>
+
+    <hr class="settings-sep">
+
+    <!-- Folder sync -->
+    <div class="settings-section-hd">
+      Synchronisierung
+      <InfoIcon style="margin-left:auto">
+        <strong>Ordner-Synchronisierung</strong><br>
+        Wähle einen lokalen Ordner (z.B. in einem Cloud-Speicher wie iCloud Drive, Dropbox oder OneDrive). Deine Stationen und Einstellungen werden dort als <em>windalert-config.json</em> gespeichert.<br>
+        Existiert im Ordner bereits eine Konfiguration, wird diese automatisch übernommen — so hast du deine Stationen auf mehreren Geräten synchron.<br>
+        <hr>
+        Nur in Chrome / Edge verfügbar. Nach einem Neuladen der Seite muss die Berechtigung evtl. erneut bestätigt werden.
+      </InfoIcon>
+    </div>
+
+    <template v-if="!configStore.fsSupported">
+      <p class="settings-note">Dein Browser unterstützt keine Ordner-Synchronisierung (nur Chrome/Edge).</p>
+    </template>
+    <template v-else>
+      <div v-if="configStore.folderStatus === 'disconnected'" class="field">
+        <button class="btn-secondary btn-block" @click="onPickFolder">Ordner wählen…</button>
+      </div>
+      <div v-else class="folder-sync-row">
+        <div class="folder-sync-info">
+          <span class="folder-dot" :class="configStore.folderStatus"></span>
+          <span>{{ configStore.folderName }}</span>
+          <span class="folder-status-label">
+            {{ configStore.folderStatus === 'connected' ? 'Verbunden' : 'Berechtigung nötig' }}
+          </span>
+        </div>
+        <div class="folder-sync-actions">
+          <button
+            v-if="configStore.folderStatus === 'needs-permission'"
+            class="btn-secondary"
+            @click="onReconnect"
+          >Verbinden</button>
+          <button class="btn-secondary" @click="onDisconnect">Trennen</button>
+        </div>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -78,5 +118,27 @@ const stationsStore = useStationsStore()
 
 function save() {
   configStore.saveConfig(stationsStore.stationsForSave(), stationsStore.activeIdx)
+}
+
+async function onPickFolder() {
+  try {
+    await configStore.pickFolder()
+    configStore.loadConfig()
+    stationsStore.loadStations()
+    stationsStore.restartPolling()
+  } catch (_e) {
+    // user cancelled the picker
+  }
+}
+
+async function onReconnect() {
+  await configStore.reconnectFolder()
+  configStore.loadConfig()
+  stationsStore.loadStations()
+  stationsStore.restartPolling()
+}
+
+async function onDisconnect() {
+  await configStore.disconnectFolder()
 }
 </script>
