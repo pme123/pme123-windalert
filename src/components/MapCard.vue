@@ -4,7 +4,7 @@
       <div ref="mapEl" class="station-map-el"></div>
       <div v-if="loading" class="map-loading">
         <span class="map-spinner"></span>
-        <span style="margin-left:8px;font-size:.8rem;color:#94a3b8">Karte wird geladen…</span>
+        <span style="margin-left:8px;font-size:.8rem;color:#94a3b8">{{ t('map.loading') }}</span>
       </div>
     </div>
     <div class="ts" style="margin-top:6px;text-align:center">{{ coordsText }}</div>
@@ -13,9 +13,11 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onBeforeUnmount } from 'vue'
+import { useI18n } from 'vue-i18n'
 import L from 'leaflet'
 import type { Map as LMap, Marker, TileLayer } from 'leaflet'
 
+const { t } = useI18n()
 const props = defineProps<{
   lat: number | null
   lon: number | null

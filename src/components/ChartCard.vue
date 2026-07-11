@@ -1,7 +1,7 @@
 <template>
   <div class="card span2">
     <div class="chart-header">
-      <div class="card-title" style="margin:0">Verlauf</div>
+      <div class="card-title" style="margin:0">{{ t('chart.title') }}</div>
       <div class="range-btns">
         <button
           v-for="h in [24, 48, 168]"
@@ -9,7 +9,7 @@
           class="range-btn"
           :class="{ active: currentHours === h }"
           @click="changeRange(h)"
-        >{{ h === 168 ? '7d' : h + 'h' }}</button>
+        >{{ h === 168 ? t('chart.days7') : h + t('chart.hoursSuffix') }}</button>
       </div>
     </div>
     <div class="chart-wrap">
@@ -21,6 +21,7 @@
 
 <script setup lang="ts">
 import { ref, watch, nextTick, onBeforeUnmount } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Chart, registerables } from 'chart.js'
 import { useStationsStore } from '../stores/stations'
 import { useUnits } from '../composables/useUnits'
@@ -28,6 +29,7 @@ import type { ChartRow } from '../types'
 
 Chart.register(...registerables)
 
+const { t, locale } = useI18n()
 const stationsStore = useStationsStore()
 const { kmhToUnit, unitLabel, unit } = useUnits()
 
@@ -47,8 +49,8 @@ function renderChart(rows: ChartRow[], hours: number) {
   const labels  = rows.map(r => {
     const d = new Date(r[0])
     return hours <= 48
-      ? d.toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' })
-      : d.toLocaleDateString('de-CH', { weekday: 'short', hour: '2-digit', minute: '2-digit' })
+      ? d.toLocaleTimeString(locale.value, { hour: '2-digit', minute: '2-digit' })
+      : d.toLocaleDateString(locale.value, { weekday: 'short', hour: '2-digit', minute: '2-digit' })
   })
   const minData = rows.map(r => kmhToUnit(r[3]))
   const avgData = rows.map(r => kmhToUnit(r[4]))
@@ -96,17 +98,17 @@ async function changeRange(hours: number) {
 
   if (s.source === 'wunderground') {
     destroyChart()
-    chartStatus.value = 'Verlaufsdaten für Weather Underground-Stationen nicht verfügbar'
+    chartStatus.value = t('chart.noDataWU')
     return
   }
 
-  chartStatus.value = 'Lade Verlaufsdaten…'
+  chartStatus.value = t('chart.loadingHistory')
   destroyChart()
   await stationsStore.loadChartData(hours)
   const rows = stationsStore.activeStation?.chartRows
   if (rows) {
     renderChart(rows, hours)
-    chartStatus.value = `${rows.length} Messpunkte`
+    chartStatus.value = t('chart.dataPoints', { n: rows.length })
   }
 }
 
@@ -123,13 +125,13 @@ watch(
     currentHours.value = s.chartHours ?? 24
     if (s.source === 'wunderground') {
       destroyChart()
-      chartStatus.value = 'Verlaufsdaten für Weather Underground-Stationen nicht verfügbar'
+      chartStatus.value = t('chart.noDataWU')
       return
     }
     if (s.chartRows) {
       await nextTick() // ensure canvas is in the DOM (important for immediate call)
       renderChart(s.chartRows, s.chartHours ?? currentHours.value)
-      chartStatus.value = `${s.chartRows.length} Messpunkte`
+      chartStatus.value = t('chart.dataPoints', { n: s.chartRows.length })
     } else if (s.id) {
       await changeRange(currentHours.value) // network request finishes after canvas is mounted
     }
@@ -152,7 +154,7 @@ watch(
   (rows) => {
     if (!rows || !rows.length) return
     renderChart(rows, currentHours.value)
-    chartStatus.value = `${rows.length} Messpunkte`
+    chartStatus.value = t('chart.dataPoints', { n: rows.length })
   }
 )
 

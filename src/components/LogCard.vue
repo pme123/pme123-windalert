@@ -1,7 +1,7 @@
 <template>
   <div class="bottom-card">
     <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
-      <button class="btn-secondary" style="padding:3px 10px;font-size:.7rem" @click="stationsStore.clearLog()">Löschen</button>
+      <button class="btn-secondary" style="padding:3px 10px;font-size:.7rem" @click="stationsStore.clearLog()">{{ t('log.clear') }}</button>
     </div>
     <div class="log">
       <div
@@ -18,7 +18,9 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { useStationsStore } from '../stores/stations'
 
+const { t } = useI18n()
 const stationsStore = useStationsStore()
 </script>

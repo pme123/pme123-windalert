@@ -1,35 +1,35 @@
 <template>
   <div class="card">
-    <div class="card-title">Station</div>
+    <div class="card-title">{{ t('station.title') }}</div>
 
     <!-- Search -->
     <div class="field">
-      <label>Station suchen</label>
+      <label>{{ t('station.searchLabel') }}</label>
       <div class="search-wrap" ref="searchWrap">
         <div class="search-row">
           <input
             type="text"
             :value="displayValue"
-            placeholder="Name oder ID tippen…"
+            :placeholder="t('station.searchPlaceholder')"
             autocomplete="off"
             @click="openDropdown"
             @input="e => { filterQuery = (e.target as HTMLInputElement).value; openDropdown() }"
           />
-          <button class="search-btn" title="Alle Stationen" @click="openDropdown">🔍</button>
+          <button class="search-btn" :title="t('station.allStations')" @click="openDropdown">🔍</button>
         </div>
         <div class="dropdown" :class="{ open: dropdownOpen }">
           <div class="dd-search">
             <input
               type="text"
               v-model="filterQuery"
-              placeholder="Name, ID oder Koordinaten…"
+              :placeholder="t('station.filterPlaceholder')"
               ref="filterInput"
               @keydown.escape="closeDropdown"
             />
           </div>
           <div class="dd-list">
             <div v-if="filteredList.length === 0" class="dd-empty">
-              {{ stationsStore.owmLoaded ? 'Keine Stationen gefunden' : 'Wird geladen…' }}
+              {{ stationsStore.owmLoaded ? t('station.noStationsFound') : t('station.loading') }}
             </div>
             <template v-else>
               <div
@@ -42,7 +42,7 @@
                 <template v-if="'_wu' in item && item._wu">
                   <div>
                     <div class="dd-name">{{ item.id }}</div>
-                    <div class="dd-sub">Weather Underground – Station laden &amp; prüfen</div>
+                    <div class="dd-sub">{{ t('station.wuEntrySub') }}</div>
                   </div>
                   <div class="dd-badge wu">PWS</div>
                 </template>
@@ -88,16 +88,16 @@
     <!-- Holfuy manual entry -->
     <div class="field">
       <label style="display:flex;align-items:center;gap:6px">
-        Holfuy-Station verbinden
+        {{ t('station.holfuyConnectLabel') }}
         <InfoIcon>
-          Holfuy-Stationen sind privat und nicht durchsuchbar. Trage Stations-ID und das von dir vergebene Passwort ein. Ein Proxy-URL muss in den Einstellungen konfiguriert sein.
+          {{ t('station.holfuyInfo') }}
         </InfoIcon>
       </label>
       <div class="inline">
-        <input type="text" v-model="holfuyId" placeholder="Stations-ID, z.B. 1399" style="flex:2" />
-        <input type="text" v-model="holfuyPw" placeholder="Passwort" style="flex:2" />
+        <input type="text" v-model="holfuyId" :placeholder="t('station.holfuyIdPlaceholder')" style="flex:2" />
+        <input type="text" v-model="holfuyPw" :placeholder="t('station.holfuyPwPlaceholder')" style="flex:2" />
         <button class="btn-secondary" :disabled="holfuyBusy" @click="connectHolfuy">
-          {{ holfuyBusy ? 'Lädt…' : 'Verbinden' }}
+          {{ holfuyBusy ? t('station.connecting') : t('station.connect') }}
         </button>
       </div>
       <div v-if="holfuyError" class="holfuy-error">{{ holfuyError }}</div>
@@ -105,16 +105,16 @@
 
     <!-- Tab name -->
     <div class="field">
-      <label>Tab-Name (optional)</label>
+      <label>{{ t('station.tabNameLabel') }}</label>
       <input
         type="text"
         :value="station?.name ?? ''"
-        placeholder="Automatisch"
+        :placeholder="t('station.tabNamePlaceholder')"
         @change="onNameChange"
       />
     </div>
 
-    <button class="btn-primary btn-block" style="margin-top:4px" @click="fetchNow">↺ Jetzt laden</button>
+    <button class="btn-primary btn-block" style="margin-top:4px" @click="fetchNow">{{ t('station.loadNow') }}</button>
 
     <!-- Map -->
     <MapCard :lat="mapLat" :lon="mapLon" />
@@ -123,6 +123,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useStationsStore } from '../stores/stations'
 import { useConfigStore } from '../stores/config'
 import { getMswMetaArr } from '../services/meteoswiss'
@@ -130,6 +131,7 @@ import type { OWMStation, MSWStationMeta } from '../types'
 import MapCard from './MapCard.vue'
 import InfoIcon from './InfoIcon.vue'
 
+const { t }         = useI18n()
 const stationsStore = useStationsStore()
 const configStore   = useConfigStore()
 
@@ -205,7 +207,7 @@ function itemKey(item: ListItem): string {
 function ageStr(s: PiouItem): string {
   if (!s.measurements?.date) return ''
   const age = Math.round((Date.now() - new Date(s.measurements.date).getTime()) / 60000)
-  return age < 2 ? '· jetzt' : `· ${age} min`
+  return age < 2 ? `· ${t('station.now')}` : `· ${t('station.minAgo', { n: age })}`
 }
 
 async function openDropdown() {
@@ -244,7 +246,7 @@ function onNameChange(e: Event) {
 async function fetchNow() {
   const s = station.value
   if (!s?.id) {
-    stationsStore.addLog('warn', 'Keine Station-ID angegeben')
+    stationsStore.addLog('warn', t('logMsg.noStationId'))
     return
   }
   await stationsStore.fetchStation(stationsStore.activeIdx)
@@ -258,7 +260,7 @@ const holfuyError = ref('')
 async function connectHolfuy() {
   holfuyError.value = ''
   if (!holfuyId.value.trim()) {
-    holfuyError.value = 'Bitte Stations-ID angeben'
+    holfuyError.value = t('logMsg.holfuyIdRequired')
     return
   }
   holfuyBusy.value = true

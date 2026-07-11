@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import type { WindUnit } from '../types'
 import {
   isFsSyncSupported,
@@ -10,6 +10,7 @@ import {
   readConfigFile,
   writeConfigFile,
 } from '../services/fsSync'
+import { setLocale, LANGUAGE_AUTO, type LanguageSetting } from '../i18n'
 
 export type FolderStatus = 'disconnected' | 'connected' | 'needs-permission'
 
@@ -26,6 +27,9 @@ export const useConfigStore = defineStore('config', () => {
   const nNotif  = ref(true)
   const cd      = ref(30)    // cooldown in minutes
   const iv      = ref(300000) // polling interval in ms
+  const language = ref<LanguageSetting>(LANGUAGE_AUTO)
+
+  watch(language, (l) => setLocale(l), { immediate: true })
 
   // Folder sync
   const fsSupported  = isFsSyncSupported()
@@ -50,6 +54,7 @@ export const useConfigStore = defineStore('config', () => {
       cd.value      = c.cd      ?? old.cd      ?? 30
       iv.value      = c.iv      ?? old.iv      ?? 300000
       unit.value    = c.unit    ?? 'kn'
+      language.value = c.language ?? LANGUAGE_AUTO
     } catch (_e) {
       // defaults already set
     }
@@ -70,6 +75,7 @@ export const useConfigStore = defineStore('config', () => {
       cd:      cd.value,
       iv:      iv.value,
       unit:    unit.value,
+      language: language.value,
     })
   }
 
@@ -137,7 +143,7 @@ export const useConfigStore = defineStore('config', () => {
   }
 
   return {
-    unit, phone, key, wuKey, holfuyProxy, nDialog, nSound, nBanner, nNotif, cd, iv,
+    unit, phone, key, wuKey, holfuyProxy, nDialog, nSound, nBanner, nNotif, cd, iv, language,
     loadConfig, saveConfig,
     fsSupported, folderName, folderStatus,
     initFolderSync, pickFolder, reconnectFolder, disconnectFolder,

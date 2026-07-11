@@ -6,7 +6,7 @@
         <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
         <line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/>
       </svg>
-      Karte
+      {{ t('tabs.map') }}
     </button>
     <button
       v-for="(s, i) in stationsStore.stations"
@@ -16,22 +16,24 @@
       @click="handleTabClick(i)"
     >
       <span class="tab-dot" :class="s.status"></span>
-      <span class="tab-name">{{ s.name || (s.id ? `Station ${s.id}` : 'Neu') }}</span>
+      <span class="tab-name">{{ s.name || (s.id ? t('tabs.stationPrefix', { id: s.id }) : t('tabs.newStation')) }}</span>
       <span
         v-if="stationsStore.stations.length > 1"
         class="tab-close"
-        title="Entfernen"
+        :title="t('tabs.remove')"
         @click.stop="stationsStore.removeStation(i)"
       >✕</span>
     </button>
-    <button class="tab-add" @click="handleAdd">＋ Station</button>
+    <button class="tab-add" @click="handleAdd">{{ t('tabs.addStation') }}</button>
   </div>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { useStationsStore } from '../stores/stations'
 
-const props = defineProps<{ mapActive: boolean }>()
+const { t } = useI18n()
+defineProps<{ mapActive: boolean }>()
 
 const emit = defineEmits<{
   (e: 'tab-changed', idx: number): void

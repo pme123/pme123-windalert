@@ -1,10 +1,10 @@
 <template>
   <div class="card">
-    <div class="card-title">Schwellenwerte</div>
+    <div class="card-title">{{ t('thresholds.title') }}</div>
 
     <!-- Avg threshold -->
     <div class="thresh-row">
-      <span class="lbl">Ø Windstärke</span>
+      <span class="lbl">{{ t('thresholds.avgWind') }}</span>
       <label class="toggle">
         <input type="checkbox" :checked="station?.tAvgOn" @change="onAvgOnChange" />
         <span class="slider"></span>
@@ -22,7 +22,7 @@
 
     <!-- Max threshold -->
     <div class="thresh-row">
-      <span class="lbl">Max Böen</span>
+      <span class="lbl">{{ t('thresholds.maxGusts') }}</span>
       <label class="toggle">
         <input type="checkbox" :checked="station?.tMaxOn" @change="onMaxOnChange" />
         <span class="slider"></span>
@@ -40,30 +40,30 @@
 
     <!-- Notifications -->
     <div class="field" style="margin-top:16px">
-      <label style="margin-bottom:8px">Benachrichtigungen</label>
+      <label style="margin-bottom:8px">{{ t('thresholds.notifications') }}</label>
       <div class="notif-row">
-        <span>Browser-Dialog</span>
+        <span>{{ t('thresholds.browserDialog') }}</span>
         <label class="toggle">
           <input type="checkbox" v-model="configStore.nDialog" @change="configStore.saveConfig(stationsStore.stationsForSave(), stationsStore.activeIdx)" />
           <span class="slider"></span>
         </label>
       </div>
       <div class="notif-row">
-        <span>Ton-Alarm</span>
+        <span>{{ t('thresholds.soundAlert') }}</span>
         <label class="toggle">
           <input type="checkbox" v-model="configStore.nSound" @change="configStore.saveConfig(stationsStore.stationsForSave(), stationsStore.activeIdx)" />
           <span class="slider"></span>
         </label>
       </div>
       <div class="notif-row">
-        <span>Banner (oben)</span>
+        <span>{{ t('thresholds.bannerTop') }}</span>
         <label class="toggle">
           <input type="checkbox" v-model="configStore.nBanner" @change="configStore.saveConfig(stationsStore.stationsForSave(), stationsStore.activeIdx)" />
           <span class="slider"></span>
         </label>
       </div>
       <div class="notif-row">
-        <span>Browser-Notification</span>
+        <span>{{ t('thresholds.browserNotification') }}</span>
         <label class="toggle">
           <input type="checkbox" v-model="configStore.nNotif" @change="onNotifChange" />
           <span class="slider"></span>
@@ -73,7 +73,7 @@
 
     <!-- Cooldown -->
     <div class="field">
-      <label>Alert-Pause (Minuten)</label>
+      <label>{{ t('thresholds.alertPause') }}</label>
       <input
         type="number"
         :value="configStore.cd"
@@ -84,29 +84,31 @@
 
     <!-- Interval -->
     <div class="field">
-      <label>Abfrageintervall</label>
+      <label>{{ t('thresholds.pollInterval') }}</label>
       <select
         :value="configStore.iv"
         @change="onIntervalChange"
       >
-        <option value="60000">1 Minute</option>
-        <option value="180000">3 Minuten</option>
-        <option value="300000">5 Minuten</option>
-        <option value="600000">10 Minuten</option>
-        <option value="900000">15 Minuten</option>
+        <option value="60000">{{ t('thresholds.min1') }}</option>
+        <option value="180000">{{ t('thresholds.min3') }}</option>
+        <option value="300000">{{ t('thresholds.min5') }}</option>
+        <option value="600000">{{ t('thresholds.min10') }}</option>
+        <option value="900000">{{ t('thresholds.min15') }}</option>
       </select>
     </div>
 
-    <button class="btn-secondary btn-block" style="margin-top:4px" @click="stationsStore.testAllAlerts()">Alle testen</button>
+    <button class="btn-secondary btn-block" style="margin-top:4px" @click="stationsStore.testAllAlerts()">{{ t('thresholds.testAll') }}</button>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useConfigStore } from '../stores/config'
 import { useStationsStore } from '../stores/stations'
 import { useUnits } from '../composables/useUnits'
 
+const { t }         = useI18n()
 const configStore   = useConfigStore()
 const stationsStore = useStationsStore()
 const { fmtThresh, unitLabel, unitToKmh } = useUnits()

@@ -1,4 +1,7 @@
 import type { MSWStationMeta, WindData, ChartRow } from '../types'
+import { i18n } from '../i18n'
+
+const t = i18n.global.t
 
 export const MSW_CURRENT = 'https://data.geo.admin.ch/ch.meteoschweiz.messwerte-aktuell/VQHA80.csv'
 export const MSW_META    = 'https://data.geo.admin.ch/ch.meteoschweiz.ogd-smn/ogd-smn_meta_stations.csv'
@@ -123,7 +126,7 @@ async function fetchMSWRecentText(abbr: string): Promise<string> {
   const cached = mswRecentCache.get(key)
   if (cached && Date.now() - cached.ts < 3_600_000) return cached.text
   const r = await fetch(mswArchiveUrl(abbr, 'recent'))
-  if (!r.ok) throw new Error(`MeteoSwiss archive HTTP ${r.status}`)
+  if (!r.ok) throw new Error(t('logMsg.mswArchiveHttpError', { status: r.status }))
   const text = await r.text()
   mswRecentCache.set(key, { ts: Date.now(), text })
   return text
@@ -154,7 +157,7 @@ export async function fetchMSWArchive(abbr: string, hours: number): Promise<Char
 export async function fetchMSWStation(abbr: string): Promise<WindData> {
   const rows = await fetchMSWCurrent()
   const row  = rows.get(abbr)
-  if (!row) throw new Error(`MeteoSwiss Station ${abbr} nicht in Daten gefunden`)
+  if (!row) throw new Error(t('logMsg.mswStationNotFound', { abbr }))
   const meta = mswMetaMap?.get(abbr)
   return {
     id:   abbr,

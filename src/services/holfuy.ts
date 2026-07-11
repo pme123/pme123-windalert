@@ -1,4 +1,7 @@
 import type { WindData } from '../types'
+import { i18n } from '../i18n'
+
+const t = i18n.global.t
 
 interface HolfuyResponse {
   stationId?: number
@@ -11,15 +14,15 @@ interface HolfuyResponse {
 }
 
 export async function fetchHolfuyStation(id: string, pw: string, proxyBase: string): Promise<WindData> {
-  if (!proxyBase) throw new Error('Kein Holfuy Proxy-URL konfiguriert (Einstellungen)')
-  if (!pw) throw new Error('Kein Holfuy Passwort für diese Station eingetragen')
+  if (!proxyBase) throw new Error(t('logMsg.holfuyNoProxy'))
+  if (!pw) throw new Error(t('logMsg.holfuyNoPassword'))
 
   const url = `${proxyBase.replace(/\/$/, '')}/?s=${encodeURIComponent(id)}&pw=${encodeURIComponent(pw)}&m=JSON&tu=C&su=km/h`
   const r   = await fetch(url)
-  if (!r.ok) throw new Error(`Holfuy Proxy HTTP ${r.status}`)
+  if (!r.ok) throw new Error(t('logMsg.holfuyProxyHttpError', { status: r.status }))
 
   const json: HolfuyResponse = await r.json()
-  if (json.error) throw new Error(`Holfuy: ${json.error}`)
+  if (json.error) throw new Error(t('logMsg.holfuyApiError', { msg: json.error }))
 
   return {
     id: json.stationId ?? id,

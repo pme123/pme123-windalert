@@ -2,22 +2,22 @@
   <div class="bottom-card">
     <!-- WhatsApp -->
     <div class="settings-section-hd">
-      WhatsApp Alert
+      {{ t('settings.whatsappTitle') }}
       <InfoIcon style="margin-left:auto">
-        <strong>Einrichtung (einmalig)</strong><br>
-        1. Nummer <strong>+34 644 97 79 48</strong> als „CallMeBot" speichern<br>
-        2. Nachricht senden: <em>I allow callmebot to send me messages</em><br>
-        3. API Key empfangen &amp; oben eintragen<br>
-        <a href="https://www.callmebot.com/blog/free-api-whatsapp-messages/" target="_blank" rel="noopener">→ callmebot.com Anleitung</a>
+        <strong>{{ t('settings.whatsappSetupTitle') }}</strong><br>
+        <i18n-t keypath="settings.whatsappStep1" tag="span"><template #number><strong>+34 644 97 79 48</strong></template></i18n-t><br>
+        <i18n-t keypath="settings.whatsappStep2" tag="span"><template #msg><em>I allow callmebot to send me messages</em></template></i18n-t><br>
+        {{ t('settings.whatsappStep3') }}<br>
+        <a href="https://www.callmebot.com/blog/free-api-whatsapp-messages/" target="_blank" rel="noopener">{{ t('settings.whatsappGuideLink') }}</a>
         <hr>
-        <strong>Rate Limit</strong><br>
-        CallMeBot erlaubt max. <strong>16 Nachrichten pro 240 Min.</strong> Bei Überschreitung werden Nachrichten in eine Warteschlange gestellt (HTTP 210) und verzögert zugestellt.<br>
-        → Empfehlung: Cooldown ≥ 60 Min. setzen<br>
-        → Bei Problemen: erneut <em>I allow callmebot to send me messages</em> senden
+        <strong>{{ t('settings.whatsappRateLimitTitle') }}</strong><br>
+        <i18n-t keypath="settings.whatsappRateLimitText" tag="span"><template #limit><strong>16</strong></template></i18n-t><br>
+        {{ t('settings.whatsappRateLimitRecommend') }}<br>
+        {{ t('settings.whatsappRateLimitProblem') }}
       </InfoIcon>
     </div>
     <div class="field">
-      <label>Telefonnummer (mit Ländervorwahl, ohne +)</label>
+      <label>{{ t('settings.phoneLabel') }}</label>
       <input
         type="text"
         v-model="configStore.phone"
@@ -26,38 +26,38 @@
       />
     </div>
     <div class="field">
-      <label>CallMeBot API Key</label>
+      <label>{{ t('settings.apiKeyLabel') }}</label>
       <input
         type="text"
         v-model="configStore.key"
-        placeholder="Wird per WhatsApp zugestellt"
+        :placeholder="t('settings.apiKeyPlaceholder')"
         @change="save"
       />
     </div>
-    <button class="btn-secondary btn-block" @click="stationsStore.testWhatsApp()">WhatsApp testen</button>
+    <button class="btn-secondary btn-block" @click="stationsStore.testWhatsApp()">{{ t('settings.testWhatsapp') }}</button>
 
     <hr class="settings-sep">
 
     <!-- Weather Underground -->
     <div class="settings-section-hd">
-      Weather Underground
+      {{ t('settings.wuTitle') }}
       <InfoIcon style="margin-left:auto">
-        <strong>Einrichtung</strong><br>
-        1. Konto erstellen auf <a href="https://www.wunderground.com" target="_blank" rel="noopener">wunderground.com</a><br>
-        2. API Key unter <em>My Profile → Settings → API Keys</em> generieren<br>
-        3. Key oben eintragen<br>
+        <strong>{{ t('settings.wuSetupTitle') }}</strong><br>
+        <i18n-t keypath="settings.wuStep1" tag="span"><template #link><a href="https://www.wunderground.com" target="_blank" rel="noopener">wunderground.com</a></template></i18n-t><br>
+        {{ t('settings.wuStep2') }}<br>
+        {{ t('settings.wuStep3') }}<br>
         <hr>
-        <strong>Station suchen</strong><br>
-        Station-ID auf der Karte finden:<br>
+        <strong>{{ t('settings.wuSearchTitle') }}</strong><br>
+        {{ t('settings.wuSearchText') }}<br>
         → <a href="https://www.wunderground.com/wundermap" target="_blank" rel="noopener">wunderground.com/wundermap</a><br>
-        Station anklicken → ID z.B. <em>IHYRES96</em> erscheint im Panel<br>
+        {{ t('settings.wuSearchClick') }}<br>
         <hr>
-        <strong>Station hinzufügen</strong><br>
-        ID in der Station-Suche eingeben (4–15 Zeichen) → <span style="color:#fb923c;font-weight:700">PWS</span>-Eintrag anklicken
+        <strong>{{ t('settings.wuAddTitle') }}</strong><br>
+        {{ t('settings.wuAddText') }}
       </InfoIcon>
     </div>
     <div class="field">
-      <label>API Key</label>
+      <label>{{ t('settings.wuKeyLabel') }}</label>
       <input
         type="text"
         v-model="configStore.wuKey"
@@ -70,17 +70,17 @@
 
     <!-- Holfuy -->
     <div class="settings-section-hd">
-      Holfuy
+      {{ t('settings.holfuyTitle') }}
       <InfoIcon style="margin-left:auto">
-        <strong>Einrichtung</strong><br>
-        Holfuy-Stationen sind privat und benötigen einen Proxy, da die API kein CORS unterstützt (Browser-Sicherheitsregel).<br>
-        1. Cloudflare Worker deployen (Code im Repo unter <em>cloudflare-worker/holfuy-proxy.js</em>)<br>
-        2. Worker-URL unten eintragen<br>
-        3. Station-ID + Passwort im Station-Panel unter „Holfuy-Station verbinden" eintragen
+        <strong>{{ t('settings.holfuySetupTitle') }}</strong><br>
+        {{ t('settings.holfuySetupText') }}<br>
+        {{ t('settings.holfuyStep1') }}<br>
+        {{ t('settings.holfuyStep2') }}<br>
+        {{ t('settings.holfuyStep3') }}
       </InfoIcon>
     </div>
     <div class="field">
-      <label>Proxy-URL</label>
+      <label>{{ t('settings.proxyLabel') }}</label>
       <input
         type="text"
         v-model="configStore.holfuyProxy"
@@ -93,29 +93,29 @@
 
     <!-- Folder sync -->
     <div class="settings-section-hd">
-      Synchronisierung
+      {{ t('settings.syncTitle') }}
       <InfoIcon style="margin-left:auto">
-        <strong>Ordner-Synchronisierung</strong><br>
-        Wähle einen lokalen Ordner (z.B. in einem Cloud-Speicher wie iCloud Drive, Dropbox oder OneDrive). Deine Stationen und Einstellungen werden dort als <em>windalert-config.json</em> gespeichert.<br>
-        Existiert im Ordner bereits eine Konfiguration, wird diese automatisch übernommen — so hast du deine Stationen auf mehreren Geräten synchron.<br>
+        <strong>{{ t('settings.syncInfoTitle') }}</strong><br>
+        {{ t('settings.syncInfoText1') }}<br>
+        {{ t('settings.syncInfoText2') }}<br>
         <hr>
-        Nur in Chrome / Edge verfügbar. Nach einem Neuladen der Seite muss die Berechtigung evtl. erneut bestätigt werden.
+        {{ t('settings.syncInfoText3') }}
       </InfoIcon>
     </div>
 
     <template v-if="!configStore.fsSupported">
-      <p class="settings-note">Dein Browser unterstützt keine Ordner-Synchronisierung (nur Chrome/Edge).</p>
+      <p class="settings-note">{{ t('settings.noFsSupport') }}</p>
     </template>
     <template v-else>
       <div v-if="configStore.folderStatus === 'disconnected'" class="field">
-        <button class="btn-secondary btn-block" @click="onPickFolder">Ordner wählen…</button>
+        <button class="btn-secondary btn-block" @click="onPickFolder">{{ t('settings.pickFolder') }}</button>
       </div>
       <div v-else class="folder-sync-row">
         <div class="folder-sync-info">
           <span class="folder-dot" :class="configStore.folderStatus"></span>
           <span>{{ configStore.folderName }}</span>
           <span class="folder-status-label">
-            {{ configStore.folderStatus === 'connected' ? 'Verbunden' : 'Berechtigung nötig' }}
+            {{ configStore.folderStatus === 'connected' ? t('settings.connected') : t('settings.needsPermission') }}
           </span>
         </div>
         <div class="folder-sync-actions">
@@ -123,19 +123,38 @@
             v-if="configStore.folderStatus === 'needs-permission'"
             class="btn-secondary"
             @click="onReconnect"
-          >Verbinden</button>
-          <button class="btn-secondary" @click="onDisconnect">Trennen</button>
+          >{{ t('settings.connect') }}</button>
+          <button class="btn-secondary" @click="onDisconnect">{{ t('settings.disconnect') }}</button>
         </div>
       </div>
     </template>
+
+    <hr class="settings-sep">
+
+    <!-- Language -->
+    <div class="settings-section-hd">
+      {{ t('settings.languageTitle') }}
+    </div>
+    <div class="field">
+      <label>{{ t('settings.languageLabel') }}</label>
+      <select v-model="configStore.language" @change="save">
+        <option value="auto">{{ t('settings.languageAuto') }}</option>
+        <option value="de">Deutsch</option>
+        <option value="en">English</option>
+        <option value="fr">Français</option>
+        <option value="it">Italiano</option>
+      </select>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { useConfigStore } from '../stores/config'
 import { useStationsStore } from '../stores/stations'
 import InfoIcon from './InfoIcon.vue'
 
+const { t }         = useI18n()
 const configStore   = useConfigStore()
 const stationsStore = useStationsStore()
 

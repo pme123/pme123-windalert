@@ -1,7 +1,7 @@
 <template>
   <div class="card" :class="{ 'card-alert': isAlert }">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-      <div class="card-title" style="margin:0">Aktuell</div>
+      <div class="card-title" style="margin:0">{{ t('wind.current') }}</div>
       <div class="unit-btns">
         <button class="unit-btn" :class="{ active: configStore.unit === 'kn' }"  @click="switchUnit('kn')">kn</button>
         <button class="unit-btn" :class="{ active: configStore.unit === 'kmh' }" @click="switchUnit('kmh')">km/h</button>
@@ -20,15 +20,15 @@
     </div>
     <div class="wind-stats">
       <div class="stat">
-        <div class="stat-lbl">Min</div>
+        <div class="stat-lbl">{{ t('wind.min') }}</div>
         <div class="stat-val">{{ fmtWind(m?.wind_speed_min ?? null) }}</div>
       </div>
       <div class="stat">
-        <div class="stat-lbl">Böen</div>
+        <div class="stat-lbl">{{ t('wind.gusts') }}</div>
         <div class="stat-val" style="color:var(--orange)">{{ fmtWind(m?.wind_speed_max ?? null) }}</div>
       </div>
       <div class="stat">
-        <div class="stat-lbl">Richtung</div>
+        <div class="stat-lbl">{{ t('wind.direction') }}</div>
         <div class="stat-val">{{ dirStr }}</div>
       </div>
     </div>
@@ -39,17 +39,19 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useConfigStore } from '../stores/config'
 import { useStationsStore } from '../stores/stations'
 import { useUnits } from '../composables/useUnits'
 import type { WindUnit } from '../types'
 
+const { t, tm, locale } = useI18n()
 const configStore   = useConfigStore()
 const stationsStore = useStationsStore()
 const { fmtWind, unitLabel } = useUnits()
 
-const DIRS = ['N','NNO','NO','ONO','O','OSO','SO','SSO','S','SSW','SW','WSW','W','WNW','NW','NNW']
-function dirLabel(deg: number) { return DIRS[Math.round(deg / 22.5) % 16] }
+const DIRS = computed(() => tm('directions') as unknown as string[])
+function dirLabel(deg: number) { return DIRS.value[Math.round(deg / 22.5) % 16] }
 
 const station = computed(() => stationsStore.activeStation)
 const m       = computed(() => station.value?.lastData?.measurements ?? null)
@@ -62,15 +64,18 @@ const dirStr = computed(() => {
 
 const tsStr = computed(() => {
   const date = m.value?.date
-  if (!date) return 'Noch keine Daten'
+  if (!date) return t('wind.noData')
   const d   = new Date(date)
   const age = Math.round((Date.now() - d.getTime()) / 60000)
-  return `Sensor: ${d.toLocaleTimeString('de-CH',{hour:'2-digit',minute:'2-digit'})} (${age < 2 ? 'gerade eben' : `vor ${age} Min`})`
+  const time = d.toLocaleTimeString(locale.value, {hour:'2-digit',minute:'2-digit'})
+  const ageStr = age < 2 ? t('wind.justNow') : t('wind.minAgo', { n: age })
+  return t('wind.sensorLabel', { time, age: ageStr })
 })
 
 const fetchedStr = computed(() => {
   if (!m.value?.date) return ''
-  return `App-Abfrage: ${new Date().toLocaleTimeString('de-CH',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}`
+  const time = new Date().toLocaleTimeString(locale.value, {hour:'2-digit',minute:'2-digit',second:'2-digit'})
+  return t('wind.appQueryLabel', { time })
 })
 
 const owmHref = computed(() => {

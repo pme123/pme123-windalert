@@ -1,20 +1,23 @@
 import type { WindData } from '../types'
+import { i18n } from '../i18n'
+
+const t = i18n.global.t
 
 export const WU_BASE = 'https://api.weather.com/v2/pws/observations/current'
 
 export async function fetchWUStation(stationId: string, apiKey: string): Promise<WindData> {
-  if (!apiKey) throw new Error('Kein Weather Underground API Key konfiguriert')
+  if (!apiKey) throw new Error(t('logMsg.wuNoApiKey'))
   if (!/^[A-Z0-9]{3,15}$/i.test(stationId))
-    throw new Error(`Ungültige Station ID "${stationId}" – nur Buchstaben und Ziffern, 3–15 Zeichen`)
+    throw new Error(t('logMsg.wuInvalidStationId', { id: stationId }))
 
   const url = `${WU_BASE}?stationId=${encodeURIComponent(stationId)}&format=json&units=m&apiKey=${encodeURIComponent(apiKey)}`
   const r   = await fetch(url)
 
   if (r.status === 204 || r.status === 404)
-    throw new Error(`Station "${stationId}" nicht gefunden – bitte Station ID prüfen`)
+    throw new Error(t('logMsg.wuStationNotFound', { id: stationId }))
 
   const text = await r.text()
-  if (!text) throw new Error(`Station "${stationId}" nicht gefunden (leere Antwort)`)
+  if (!text) throw new Error(t('logMsg.wuStationNotFoundEmpty', { id: stationId }))
 
   let json: {
     observations?: Array<{
@@ -32,15 +35,15 @@ export async function fetchWUStation(stationId: string, apiKey: string): Promise
   try {
     json = JSON.parse(text)
   } catch (_e) {
-    throw new Error(`WU ${r.status}: ${text.slice(0, 120)}`)
+    throw new Error(t('logMsg.wuParseError', { status: r.status, text: text.slice(0, 120) }))
   }
 
   if (!r.ok || json.errors) {
     const msg = json.errors?.[0]?.error?.message || json.message || `HTTP ${r.status}`
-    throw new Error(`WU: ${msg}`)
+    throw new Error(t('logMsg.wuApiError', { msg }))
   }
 
-  if (!json.observations?.length) throw new Error(`Station "${stationId}" hat keine aktuellen Messwerte`)
+  if (!json.observations?.length) throw new Error(t('logMsg.wuNoMeasurements', { id: stationId }))
 
   const obs = json.observations[0]
   return {

@@ -18,7 +18,7 @@
   <div v-if="showSettings" class="modal-overlay" @click.self="showSettings = false">
     <div class="modal-box">
       <div class="modal-header">
-        <span>Einstellungen</span>
+        <span>{{ t('header.settings') }}</span>
         <button class="modal-close" @click="showSettings = false">✕</button>
       </div>
       <div class="modal-body">
@@ -30,7 +30,7 @@
   <div v-if="showLog" class="modal-overlay" @click.self="showLog = false">
     <div class="modal-box">
       <div class="modal-header">
-        <span>Protokoll</span>
+        <span>{{ t('log.title') }}</span>
         <button class="modal-close" @click="showLog = false">✕</button>
       </div>
       <div class="modal-body">
@@ -44,6 +44,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useConfigStore } from './stores/config'
 import { useStationsStore } from './stores/stations'
 
@@ -56,6 +57,7 @@ import SettingsCard from './components/SettingsCard.vue'
 import LogCard      from './components/LogCard.vue'
 import MapOverview  from './components/MapOverview.vue'
 
+const { t }         = useI18n()
 const configStore   = useConfigStore()
 const stationsStore = useStationsStore()
 const showMap       = ref(true)

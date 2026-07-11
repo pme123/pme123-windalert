@@ -7,15 +7,16 @@ import { fetchMSWStation, fetchMSWMeta, fetchMSWArchive, getMswMeta, getMswMetaA
 import { fetchWUStation } from '../services/wunderground'
 import { fetchHolfuyStation } from '../services/holfuy'
 import { useUnits } from '../composables/useUnits'
+import { i18n } from '../i18n'
 
-const DIRS = ['N','NNO','NO','ONO','O','OSO','SO','SSO','S','SSW','SW','WSW','W','WNW','NW','NNW']
-
+const t = i18n.global.t
 function dirLabel(deg: number): string {
-  return DIRS[Math.round(deg / 22.5) % 16]
+  const dirs = i18n.global.tm('directions') as unknown as string[]
+  return dirs[Math.round(deg / 22.5) % 16]
 }
 
 function ts(): string {
-  return new Date().toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' })
+  return new Date().toLocaleTimeString(i18n.global.locale.value, { hour: '2-digit', minute: '2-digit' })
 }
 
 function makeStation(id = '', name = '', source: Station['source'] = 'pioupiou'): Station {
@@ -36,7 +37,7 @@ export const useStationsStore = defineStore('stations', () => {
 
   const stations  = ref<Station[]>([])
   const activeIdx = ref(0)
-  const log       = ref<LogEntry[]>([{ id: ++logIdCounter, type: 'info', msg: 'Bereit.', time: '--:--' }])
+  const log       = ref<LogEntry[]>([{ id: ++logIdCounter, type: 'info', msg: t('logMsg.ready'), time: '--:--' }])
 
   let pollTimer:  ReturnType<typeof setInterval> | null = null
   let cdTimer:    ReturnType<typeof setInterval> | null = null
@@ -49,16 +50,16 @@ export const useStationsStore = defineStore('stations', () => {
     const ph = configStore.phone.trim()
     const k  = configStore.key.trim()
     if (!ph || !k) {
-      addLog('warn', `WhatsApp nicht konfiguriert – ${!ph ? 'Nummer' : 'API Key'} fehlt`)
+      addLog('warn', t('logMsg.whatsappNotConfigured', { missing: !ph ? t('logMsg.missingNumber') : t('logMsg.missingApiKey') }))
       return
     }
     const url = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(ph)}&text=${encodeURIComponent(text)}&apikey=${encodeURIComponent(k)}`
     try {
-      addLog('info', `WhatsApp: Anfrage wird gesendet an +${ph}…`)
+      addLog('info', t('logMsg.whatsappSending', { phone: ph }))
       await fetch(url, { mode: 'no-cors' })
-      addLog('ok', `WhatsApp: Anfrage abgeschickt an +${ph} (Zustellung via CallMeBot, keine Bestätigung möglich)`)
+      addLog('ok', t('logMsg.whatsappSent', { phone: ph }))
     } catch (e) {
-      addLog('alert', `WhatsApp Fehler: ${(e as Error).message}`)
+      addLog('alert', t('logMsg.whatsappError', { err: (e as Error).message }))
     }
   }
 
@@ -70,7 +71,7 @@ export const useStationsStore = defineStore('stations', () => {
 
   function clearLog() {
     log.value = []
-    addLog('info', 'Protokoll geleert')
+    addLog('info', t('logMsg.logCleared'))
   }
 
   // Persistence helpers
@@ -125,7 +126,7 @@ export const useStationsStore = defineStore('stations', () => {
     if (!s) return
     const { fmtWind, fmtThresh, unitLabel } = getUnits()
     const m       = data.measurements
-    const sname   = s.name || (data.meta?.name) || `Station ${data.id || s.id}`
+    const sname   = s.name || (data.meta?.name) || t('station.stationPrefix', { id: data.id || s.id })
     const reasons: string[] = []
 
     const avgKmh = m.wind_speed_avg
@@ -134,15 +135,15 @@ export const useStationsStore = defineStore('stations', () => {
 
     if (s.tAvgOn) {
       const hit = avgKmh != null && avgKmh >= s.tAvg
-      parts.push(`Ø ${avgKmh != null ? fmtWind(avgKmh) : '–'}${hit ? ' ✓' : ` (Schwelle: ${fmtThresh(s.tAvg)})`} ${unitLabel()}`)
+      parts.push(`Ø ${avgKmh != null ? fmtWind(avgKmh) : '–'}${hit ? ' ✓' : ` (${t('logMsg.thresholdLabel', { v: fmtThresh(s.tAvg) })})`} ${unitLabel()}`)
       if (hit) reasons.push(`Ø ${fmtWind(avgKmh)} ${unitLabel()} ≥ ${fmtThresh(s.tAvg)} ${unitLabel()}`)
     }
     if (s.tMaxOn) {
       const hit = maxKmh != null && maxKmh >= s.tMax
-      parts.push(`Böen ${maxKmh != null ? fmtWind(maxKmh) : '–'}${hit ? ' ✓' : ` (Schwelle: ${fmtThresh(s.tMax)})`} ${unitLabel()}`)
-      if (hit) reasons.push(`Böen ${fmtWind(maxKmh)} ${unitLabel()} ≥ ${fmtThresh(s.tMax)} ${unitLabel()}`)
+      parts.push(`${t('wind.gusts')} ${maxKmh != null ? fmtWind(maxKmh) : '–'}${hit ? ' ✓' : ` (${t('logMsg.thresholdLabel', { v: fmtThresh(s.tMax) })})`} ${unitLabel()}`)
+      if (hit) reasons.push(`${t('wind.gusts')} ${fmtWind(maxKmh)} ${unitLabel()} ≥ ${fmtThresh(s.tMax)} ${unitLabel()}`)
     }
-    addLog('info', `[${sname}] ${parts.length ? parts.join(' | ') : 'keine Schwellen aktiv'}`)
+    addLog('info', `[${sname}] ${parts.length ? parts.join(' | ') : t('logMsg.noThresholdsActive')}`)
 
     s.status = reasons.length ? 'warn' : 'ok'
 
@@ -152,22 +153,27 @@ export const useStationsStore = defineStore('stations', () => {
     const cdMs = configStore.cd * 60000
     if (now - s.lastAlertAt < cdMs) {
       const rem = Math.round((cdMs - (now - s.lastAlertAt)) / 60000)
-      addLog('warn', `[${sname}] ⏱ Schwelle überschritten – Pause aktiv (noch ${rem} min)`)
+      addLog('warn', t('logMsg.thresholdPauseActive', { name: sname, min: rem }))
       return
     }
     s.lastAlertAt = now
     saveConfig()
 
     const dir = m.wind_heading
-    const msg = `⚠️ Wind Alert: ${sname}\n${reasons.join(', ')}\nRichtung: ${dir != null ? dirLabel(dir) + ' (' + Math.round(dir) + '°)' : '–'}\n${new Date().toLocaleString('de-CH')}`
+    const msg = t('logMsg.windAlertMsg', {
+      name: sname,
+      reasons: reasons.join(', '),
+      dir: dir != null ? dirLabel(dir) + ' (' + Math.round(dir) + '°)' : '–',
+      date: new Date().toLocaleString(i18n.global.locale.value),
+    })
 
-    addLog('alert', `[${sname}] ALERT: ${reasons.join(' | ')}`)
+    addLog('alert', t('logMsg.alertLog', { name: sname, reasons: reasons.join(' | ') }))
     sendWhatsApp(msg)
 
     if (configStore.nNotif)  showBrowserNotif(sname, reasons.join(', '))
     if (configStore.nBanner) showBanner(`${sname}: ${reasons.join(' | ')}`)
     if (configStore.nSound)  playAlertSound()
-    if (configStore.nDialog) setTimeout(() => alert(`⚠️ Wind Alert: ${sname}\n\n${reasons.join('\n')}`), 100)
+    if (configStore.nDialog) setTimeout(() => alert(t('logMsg.windAlertDialog', { name: sname, reasons: reasons.join('\n') })), 100)
   }
 
   // Notification helpers
@@ -204,7 +210,7 @@ export const useStationsStore = defineStore('stations', () => {
         osc.stop(ctx.currentTime + off + 0.2)
       })
     } catch (e) {
-      addLog('info', `Ton nicht möglich: ${(e as Error).message}`)
+      addLog('info', t('logMsg.soundNotPossible', { err: (e as Error).message }))
     }
   }
 
@@ -233,7 +239,7 @@ export const useStationsStore = defineStore('stations', () => {
     } catch (e) {
       s.status = 'err'
       if (idx === activeIdx.value) {
-        addLog('alert', `Ladefehler: ${(e as Error).message}`)
+        addLog('alert', t('logMsg.loadError', { err: (e as Error).message }))
       }
     }
   }
@@ -251,8 +257,8 @@ export const useStationsStore = defineStore('stations', () => {
       })
     )
     const failed = results.filter(r => r.status === 'rejected').length
-    if (failed) addLog('warn', `Verlauf-Refresh: ${failed} Station(en) fehlgeschlagen`)
-    else addLog('info', `Verlauf aktualisiert (${stations.value.filter(s => s.id && s.source !== 'wunderground').length} Stationen)`)
+    if (failed) addLog('warn', t('logMsg.chartRefreshFailed', { n: failed }))
+    else addLog('info', t('logMsg.chartRefreshed', { n: stations.value.filter(s => s.id && s.source !== 'wunderground').length }))
   }
 
   // Internal: load chart data for a specific station by index
@@ -329,7 +335,7 @@ export const useStationsStore = defineStore('stations', () => {
     try {
       await loadChartData_forStation(idx, hours)
     } catch (e) {
-      addLog('warn', `Verlaufsdaten Fehler: ${(e as Error).message}`)
+      addLog('warn', t('logMsg.chartDataError', { err: (e as Error).message }))
     }
   }
 
@@ -343,15 +349,15 @@ export const useStationsStore = defineStore('stations', () => {
       const list = await fetchAllStations()
       owmStations.value = list
       owmLoaded.value   = true
-      addLog('info', `OpenWindMap: ${list.length} aktive Stationen geladen`)
+      addLog('info', t('logMsg.owmLoaded', { n: list.length }))
     } catch (e) {
-      addLog('warn', `Fehler beim Laden der Stationen: ${(e as Error).message}`)
+      addLog('warn', t('logMsg.owmLoadError', { err: (e as Error).message }))
     }
     try {
       await fetchMSWMeta()
-      addLog('info', `MeteoSwiss: ${getMswMetaArr().length} Stationen geladen`)
+      addLog('info', t('logMsg.mswLoaded', { n: getMswMetaArr().length }))
     } catch (e) {
-      addLog('warn', `MeteoSwiss Metadaten Fehler: ${(e as Error).message}`)
+      addLog('warn', t('logMsg.mswLoadError', { err: (e as Error).message }))
     }
   }
 
@@ -379,7 +385,7 @@ export const useStationsStore = defineStore('stations', () => {
   }
 
   async function selectWUFromSearch(stationId: string) {
-    addLog('info', `WU: Lade Station ${stationId}…`)
+    addLog('info', t('logMsg.wuLoading', { id: stationId }))
     try {
       const data = await fetchWUStation(stationId, configStore.wuKey)
       const nm   = data.meta.name as string
@@ -390,56 +396,56 @@ export const useStationsStore = defineStore('stations', () => {
       s.source   = 'wunderground'
       s.lastData = data
       saveConfig()
-      addLog('ok', `WU: ${nm} (${stationId}) geladen`)
+      addLog('ok', t('logMsg.wuLoaded', { name: nm, id: stationId }))
     } catch (e) {
-      addLog('alert', `WU Fehler: ${(e as Error).message}`)
+      addLog('alert', t('logMsg.wuError', { err: (e as Error).message }))
     }
   }
 
   async function selectHolfuyStation(stationId: string, pw: string): Promise<string | null> {
-    addLog('info', `Holfuy: Lade Station ${stationId}…`)
+    addLog('info', t('logMsg.holfuyLoading', { id: stationId }))
     try {
       const data = await fetchHolfuyStation(stationId, pw, configStore.holfuyProxy)
       const nm   = data.meta.name as string
       const s    = stations.value[activeIdx.value]
-      if (!s) return 'Keine aktive Station'
+      if (!s) return t('logMsg.holfuyNoActiveStation')
       s.id       = stationId
       s.pw       = pw
       s.name     = nm
       s.source   = 'holfuy'
       s.lastData = data
       saveConfig()
-      addLog('ok', `Holfuy: ${nm} (${stationId}) geladen`)
+      addLog('ok', t('logMsg.holfuyLoaded', { name: nm, id: stationId }))
       return null
     } catch (e) {
       const msg = (e as Error).message
-      addLog('alert', `Holfuy Fehler: ${msg}`)
+      addLog('alert', t('logMsg.holfuyError', { err: msg }))
       return msg
     }
   }
 
   async function testAllAlerts() {
     const s = stations.value[activeIdx.value]
-    const sname = s?.name || (s?.id ? `Station ${s.id}` : 'Test')
-    addLog('info', 'Test aller Benachrichtigungen…')
+    const sname = s?.name || (s?.id ? t('station.stationPrefix', { id: s.id }) : t('logMsg.testDefaultName'))
+    addLog('info', t('logMsg.testingAllNotifications'))
     if (configStore.nSound)  playAlertSound()
-    if (configStore.nBanner) showBanner(`Test: ${sname} – Böen 42.0 km/h`)
-    if (configStore.nNotif)  showBrowserNotif(sname, 'Test: Böen 42 km/h')
-    if (configStore.nDialog) setTimeout(() => alert(`⚠️ Wind Alert TEST\nStation: ${sname}\nBöen 42 km/h`), 100)
+    if (configStore.nBanner) showBanner(t('logMsg.testBanner', { name: sname }))
+    if (configStore.nNotif)  showBrowserNotif(sname, t('logMsg.testBrowserNotif'))
+    if (configStore.nDialog) setTimeout(() => alert(t('logMsg.testDialogTitle', { name: sname })), 100)
   }
 
   async function testWhatsApp() {
     const s = stations.value[activeIdx.value]
-    const sname = s?.name || (s?.id ? `Station ${s.id}` : 'Test')
-    addLog('info', 'Sende Test-Nachricht…')
-    await sendWhatsApp(`🧪 Wind Alert Test\nStation: ${sname}\nDie Alerts sind aktiv.\n${new Date().toLocaleString('de-CH')}`)
+    const sname = s?.name || (s?.id ? t('station.stationPrefix', { id: s.id }) : t('logMsg.testDefaultName'))
+    addLog('info', t('logMsg.sendingTestMessage'))
+    await sendWhatsApp(t('logMsg.testMessage', { name: sname, date: new Date().toLocaleString(i18n.global.locale.value) }))
   }
 
   async function maybeRequestNotif() {
     if (configStore.nNotif) {
       const p = await Notification.requestPermission()
       addLog(p === 'granted' ? 'ok' : 'info',
-        p === 'granted' ? 'Browser-Benachrichtigungen aktiviert' : 'Berechtigung verweigert')
+        p === 'granted' ? t('logMsg.notifEnabled') : t('logMsg.notifDenied'))
     }
   }
 

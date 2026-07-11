@@ -1,6 +1,6 @@
 <template>
   <div class="card">
-    <div class="card-title">Windrichtung</div>
+    <div class="card-title">{{ t('compass.title') }}</div>
     <div class="compass-wrap">
       <svg viewBox="0 0 100 100" width="120" height="120">
         <circle cx="50" cy="50" r="46" fill="none" stroke="#334155" stroke-width="1.5"/>
@@ -27,9 +27,11 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useStationsStore } from '../stores/stations'
 
-const DIRS = ['N','NNO','NO','ONO','O','OSO','SO','SSO','S','SSW','SW','WSW','W','WNW','NW','NNW']
+const { t, tm } = useI18n()
+const DIRS = computed(() => tm('directions') as unknown as string[])
 
 const stationsStore = useStationsStore()
 const m = computed(() => stationsStore.activeStation?.lastData?.measurements ?? null)
@@ -38,7 +40,7 @@ const heading = computed(() => m.value?.wind_heading ?? 0)
 const compassLabel = computed(() => {
   const deg = m.value?.wind_heading
   if (deg == null) return '– –'
-  const dir = DIRS[Math.round(deg / 22.5) % 16]
+  const dir = DIRS.value[Math.round(deg / 22.5) % 16]
   return `${dir}  ${Math.round(deg)}°`
 })
 </script>
