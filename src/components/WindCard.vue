@@ -80,6 +80,8 @@ const owmHref = computed(() => {
     return `https://www.meteoswiss.admin.ch/services-and-publications/applications/measurement-values-and-measuring-networks.html#param=messnetz-automatisch&station=${s.id}`
   if (s.source === 'wunderground')
     return `https://www.wunderground.com/dashboard/pws/${s.id}`
+  if (s.source === 'holfuy')
+    return `https://holfuy.com/en/weather/${s.id}`
   return `https://www.openwindmap.org/windbird-${s.id}`
 })
 
@@ -93,6 +95,7 @@ const owmLabel = computed(() => {
     return `MeteoSwiss ${s.id}${elev}`
   }
   if (s.source === 'wunderground') return `wunderground.com/pws/${s.id}`
+  if (s.source === 'holfuy') return `Holfuy ${s.id}`
   return `openwindmap.org/windbird-${s.id}`
 })
 

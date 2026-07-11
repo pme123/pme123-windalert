@@ -19,6 +19,7 @@ export const useConfigStore = defineStore('config', () => {
   const phone   = ref('')
   const key     = ref('')
   const wuKey   = ref('')
+  const holfuyProxy = ref('')
   const nDialog = ref(false)
   const nSound  = ref(true)
   const nBanner = ref(true)
@@ -41,6 +42,7 @@ export const useConfigStore = defineStore('config', () => {
       phone.value   = c.phone   || old.phone   || ''
       key.value     = c.key     || old.key     || ''
       wuKey.value   = c.wuKey   || ''
+      holfuyProxy.value = c.holfuyProxy || ''
       nDialog.value = c.nDialog ?? old.nDialog ?? false
       nSound.value  = c.nSound  ?? old.nSound  ?? true
       nBanner.value = c.nBanner ?? old.nBanner ?? true
@@ -60,6 +62,7 @@ export const useConfigStore = defineStore('config', () => {
       phone:   phone.value,
       key:     key.value,
       wuKey:   wuKey.value,
+      holfuyProxy: holfuyProxy.value,
       nDialog: nDialog.value,
       nSound:  nSound.value,
       nBanner: nBanner.value,
@@ -134,7 +137,7 @@ export const useConfigStore = defineStore('config', () => {
   }
 
   return {
-    unit, phone, key, wuKey, nDialog, nSound, nBanner, nNotif, cd, iv,
+    unit, phone, key, wuKey, holfuyProxy, nDialog, nSound, nBanner, nNotif, cd, iv,
     loadConfig, saveConfig,
     fsSupported, folderName, folderStatus,
     initFolderSync, pickFolder, reconnectFolder, disconnectFolder,

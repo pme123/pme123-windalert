@@ -36,7 +36,14 @@
       "mcp__claude-in-chrome__navigate",
       "Bash(curl -sS -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173/pme123-windalert/)",
       "Bash(nohup npm run dev)",
-      "Bash(curl -sS -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173/)"
+      "Bash(curl -sS -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173/)",
+      "WebFetch(domain:holfuy.com)",
+      "WebFetch(domain:api.holfuy.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:pypi.org)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebSearch",
+      "Bash(curl -sS \"https://api.holfuy.com/live/\")"
     ]
   }
 }

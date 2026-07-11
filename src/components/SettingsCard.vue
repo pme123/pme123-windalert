@@ -68,6 +68,29 @@
 
     <hr class="settings-sep">
 
+    <!-- Holfuy -->
+    <div class="settings-section-hd">
+      Holfuy
+      <InfoIcon style="margin-left:auto">
+        <strong>Einrichtung</strong><br>
+        Holfuy-Stationen sind privat und benötigen einen Proxy, da die API kein CORS unterstützt (Browser-Sicherheitsregel).<br>
+        1. Cloudflare Worker deployen (Code im Repo unter <em>cloudflare-worker/holfuy-proxy.js</em>)<br>
+        2. Worker-URL unten eintragen<br>
+        3. Station-ID + Passwort im Station-Panel unter „Holfuy-Station verbinden" eintragen
+      </InfoIcon>
+    </div>
+    <div class="field">
+      <label>Proxy-URL</label>
+      <input
+        type="text"
+        v-model="configStore.holfuyProxy"
+        placeholder="https://holfuy-proxy.<du>.workers.dev"
+        @change="save"
+      />
+    </div>
+
+    <hr class="settings-sep">
+
     <!-- Folder sync -->
     <div class="settings-section-hd">
       Synchronisierung

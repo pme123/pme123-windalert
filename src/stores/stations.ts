@@ -5,6 +5,7 @@ import { useConfigStore } from './config'
 import { fetchWindData, fetchAllStations, fetchArchive } from '../services/pioupiou'
 import { fetchMSWStation, fetchMSWMeta, fetchMSWArchive, getMswMeta, getMswMetaArr } from '../services/meteoswiss'
 import { fetchWUStation } from '../services/wunderground'
+import { fetchHolfuyStation } from '../services/holfuy'
 import { useUnits } from '../composables/useUnits'
 
 const DIRS = ['N','NNO','NO','ONO','O','OSO','SO','SSO','S','SSW','SW','WSW','W','WNW','NW','NNW']
@@ -74,8 +75,8 @@ export const useStationsStore = defineStore('stations', () => {
 
   // Persistence helpers
   function stationsForSave() {
-    return stations.value.map(({ id, name, source, tAvg, tAvgOn, tMax, tMaxOn, lastAlertAt }) => ({
-      id, name, source: source || 'pioupiou', tAvg, tAvgOn, tMax, tMaxOn, lastAlertAt,
+    return stations.value.map(({ id, name, source, pw, tAvg, tAvgOn, tMax, tMaxOn, lastAlertAt }) => ({
+      id, name, source: source || 'pioupiou', pw, tAvg, tAvgOn, tMax, tMaxOn, lastAlertAt,
     }))
   }
 
@@ -215,8 +216,10 @@ export const useStationsStore = defineStore('stations', () => {
       let data: WindData
       if (s.source === 'meteoswiss') {
         data = await fetchMSWStation(s.id)
-      } else if (s.source === 'wunderground') {
+      } else if (s.source === 'wunderground' || s.source === 'holfuy') {
         data = await fetchWUStation(s.id, configStore.wuKey)
+      } else if (s.source === 'holfuy') {
+        data = await fetchHolfuyStation(s.id, s.pw ?? '', configStore.holfuyProxy)
       } else {
         data = await fetchWindData(s.id)
         // Auto-name from Pioupiou API on first load
@@ -242,7 +245,7 @@ export const useStationsStore = defineStore('stations', () => {
   async function refreshAllCharts() {
     const results = await Promise.allSettled(
       stations.value.map(s => {
-        if (!s.id || s.source === 'wunderground') return Promise.resolve()
+        if (!s.id || s.source === 'wunderground' || s.source === 'holfuy') return Promise.resolve()
         const idx = stations.value.indexOf(s)
         return loadChartData_forStation(idx, s.chartHours ?? 24)
       })
@@ -255,7 +258,7 @@ export const useStationsStore = defineStore('stations', () => {
   // Internal: load chart data for a specific station by index
   async function loadChartData_forStation(idx: number, hours: number): Promise<void> {
     const s = stations.value[idx]
-    if (!s?.id || s.source === 'wunderground') return
+    if (!s?.id || s.source === 'wunderground' || s.source === 'holfuy') return
     s.chartHours = hours
     const rows = s.source === 'meteoswiss'
       ? await fetchMSWArchive(s.id, hours)
@@ -322,7 +325,7 @@ export const useStationsStore = defineStore('stations', () => {
   async function loadChartData(hours: number): Promise<void> {
     const idx = activeIdx.value
     const s   = stations.value[idx]
-    if (!s?.id || s.source === 'wunderground') return
+    if (!s?.id || s.source === 'wunderground' || s.source === 'holfuy') return
     try {
       await loadChartData_forStation(idx, hours)
     } catch (e) {
@@ -393,6 +396,28 @@ export const useStationsStore = defineStore('stations', () => {
     }
   }
 
+  async function selectHolfuyStation(stationId: string, pw: string): Promise<string | null> {
+    addLog('info', `Holfuy: Lade Station ${stationId}…`)
+    try {
+      const data = await fetchHolfuyStation(stationId, pw, configStore.holfuyProxy)
+      const nm   = data.meta.name as string
+      const s    = stations.value[activeIdx.value]
+      if (!s) return 'Keine aktive Station'
+      s.id       = stationId
+      s.pw       = pw
+      s.name     = nm
+      s.source   = 'holfuy'
+      s.lastData = data
+      saveConfig()
+      addLog('ok', `Holfuy: ${nm} (${stationId}) geladen`)
+      return null
+    } catch (e) {
+      const msg = (e as Error).message
+      addLog('alert', `Holfuy Fehler: ${msg}`)
+      return msg
+    }
+  }
+
   async function testAllAlerts() {
     const s = stations.value[activeIdx.value]
     const sname = s?.name || (s?.id ? `Station ${s.id}` : 'Test')
@@ -450,6 +475,7 @@ export const useStationsStore = defineStore('stations', () => {
     selectOWM,
     selectMSWStation,
     selectWUFromSearch,
+    selectHolfuyStation,
     sendWhatsApp,
     playAlertSound,
     showBanner,

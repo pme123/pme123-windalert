@@ -1,4 +1,4 @@
-export type WindSource = 'pioupiou' | 'meteoswiss' | 'wunderground'
+export type WindSource = 'pioupiou' | 'meteoswiss' | 'wunderground' | 'holfuy'
 export type StationStatus = 'off' | 'ok' | 'warn' | 'err'
 export type WindUnit = 'kn' | 'kmh' | 'bft'
 
@@ -6,6 +6,7 @@ export interface Station {
   id: string
   name: string
   source: WindSource
+  pw?: string         // per-station password (Holfuy)
   tAvg: number       // stored in km/h internally
   tAvgOn: boolean
   tMax: number       // stored in km/h internally

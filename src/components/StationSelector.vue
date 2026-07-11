@@ -85,6 +85,24 @@
       </div>
     </div>
 
+    <!-- Holfuy manual entry -->
+    <div class="field">
+      <label style="display:flex;align-items:center;gap:6px">
+        Holfuy-Station verbinden
+        <InfoIcon>
+          Holfuy-Stationen sind privat und nicht durchsuchbar. Trage Stations-ID und das von dir vergebene Passwort ein. Ein Proxy-URL muss in den Einstellungen konfiguriert sein.
+        </InfoIcon>
+      </label>
+      <div class="inline">
+        <input type="text" v-model="holfuyId" placeholder="Stations-ID, z.B. 1399" style="flex:2" />
+        <input type="text" v-model="holfuyPw" placeholder="Passwort" style="flex:2" />
+        <button class="btn-secondary" :disabled="holfuyBusy" @click="connectHolfuy">
+          {{ holfuyBusy ? 'Lädt…' : 'Verbinden' }}
+        </button>
+      </div>
+      <div v-if="holfuyError" class="holfuy-error">{{ holfuyError }}</div>
+    </div>
+
     <!-- Tab name -->
     <div class="field">
       <label>Tab-Name (optional)</label>
@@ -110,6 +128,7 @@ import { useConfigStore } from '../stores/config'
 import { getMswMetaArr } from '../services/meteoswiss'
 import type { OWMStation, MSWStationMeta } from '../types'
 import MapCard from './MapCard.vue'
+import InfoIcon from './InfoIcon.vue'
 
 const stationsStore = useStationsStore()
 const configStore   = useConfigStore()
@@ -229,6 +248,31 @@ async function fetchNow() {
     return
   }
   await stationsStore.fetchStation(stationsStore.activeIdx)
+}
+
+const holfuyId    = ref('')
+const holfuyPw    = ref('')
+const holfuyBusy  = ref(false)
+const holfuyError = ref('')
+
+async function connectHolfuy() {
+  holfuyError.value = ''
+  if (!holfuyId.value.trim()) {
+    holfuyError.value = 'Bitte Stations-ID angeben'
+    return
+  }
+  holfuyBusy.value = true
+  try {
+    const err = await stationsStore.selectHolfuyStation(holfuyId.value.trim(), holfuyPw.value.trim())
+    if (err) {
+      holfuyError.value = err
+    } else {
+      holfuyId.value = ''
+      holfuyPw.value = ''
+    }
+  } finally {
+    holfuyBusy.value = false
+  }
 }
 
 // Close dropdown on outside click

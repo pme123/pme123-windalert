@@ -382,6 +382,7 @@ input[type=text], input[type=number], select {
 }
 input:focus, select:focus { border-color: var(--accent); }
 .inline { display: flex; gap: 8px; align-items: center; }
+.holfuy-error { margin-top: 6px; font-size: .78rem; color: var(--red); }
 .inline input { flex: 1; }
 .suffix {
   flex-shrink: 0; background: var(--surface2);
