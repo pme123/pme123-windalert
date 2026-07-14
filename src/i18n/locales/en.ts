@@ -102,7 +102,7 @@ export default {
     holfuyConnectLabel: 'Connect Holfuy station',
     holfuyInfo: 'Holfuy stations are private and not searchable. Enter the station ID and the password you assigned. A proxy URL must be configured in settings.',
     holfuyIdPlaceholder: 'Station ID, e.g. 1399',
-    holfuyPwPlaceholder: 'Password',
+    holfuyPwPlaceholder: 'Password (optional)',
     connecting: 'Loading…',
     connect: 'Connect',
     tabNameLabel: 'Tab name (optional)',

@@ -102,7 +102,7 @@ export default {
     holfuyConnectLabel: 'Connecter une station Holfuy',
     holfuyInfo: 'Les stations Holfuy sont privées et non consultables. Saisissez l\'ID de la station et le mot de passe que vous avez défini. Une URL de proxy doit être configurée dans les paramètres.',
     holfuyIdPlaceholder: 'ID de station, p. ex. 1399',
-    holfuyPwPlaceholder: 'Mot de passe',
+    holfuyPwPlaceholder: 'Mot de passe (optionnel)',
     connecting: 'Chargement…',
     connect: 'Connecter',
     tabNameLabel: 'Nom de l\'onglet (facultatif)',
