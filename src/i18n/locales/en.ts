@@ -117,6 +117,7 @@ export default {
     avgWind: 'Avg wind speed',
     maxGusts: 'Max gusts',
     notifications: 'Notifications',
+    whatsappAlert: 'WhatsApp alert',
     browserDialog: 'Browser dialog',
     soundAlert: 'Sound alert',
     bannerTop: 'Banner (top)',

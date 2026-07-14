@@ -117,6 +117,7 @@ export default {
     avgWind: 'Vitesse moyenne du vent',
     maxGusts: 'Rafales max',
     notifications: 'Notifications',
+    whatsappAlert: 'Alerte WhatsApp',
     browserDialog: 'Boîte de dialogue',
     soundAlert: 'Alerte sonore',
     bannerTop: 'Bannière (en haut)',

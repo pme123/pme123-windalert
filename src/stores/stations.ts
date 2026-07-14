@@ -24,6 +24,7 @@ function makeStation(id = '', name = '', source: Station['source'] = 'pioupiou')
     id, name, source,
     tAvg: 20, tAvgOn: false,
     tMax: 40, tMaxOn: true,
+    waOn: true,
     lastData: null, lastAlertAt: 0,
     chartRows: null, chartHours: 24,
     status: 'off',
@@ -76,8 +77,8 @@ export const useStationsStore = defineStore('stations', () => {
 
   // Persistence helpers
   function stationsForSave() {
-    return stations.value.map(({ id, name, source, pw, tAvg, tAvgOn, tMax, tMaxOn, lastAlertAt }) => ({
-      id, name, source: source || 'pioupiou', pw, tAvg, tAvgOn, tMax, tMaxOn, lastAlertAt,
+    return stations.value.map(({ id, name, source, pw, tAvg, tAvgOn, tMax, tMaxOn, waOn, lastAlertAt }) => ({
+      id, name, source: source || 'pioupiou', pw, tAvg, tAvgOn, tMax, tMaxOn, waOn, lastAlertAt,
     }))
   }
 
@@ -168,7 +169,7 @@ export const useStationsStore = defineStore('stations', () => {
     })
 
     addLog('alert', t('logMsg.alertLog', { name: sname, reasons: reasons.join(' | ') }))
-    sendWhatsApp(msg)
+    if (s.waOn) sendWhatsApp(msg)
 
     if (configStore.nNotif)  showBrowserNotif(sname, reasons.join(', '))
     if (configStore.nBanner) showBanner(`${sname}: ${reasons.join(' | ')}`)

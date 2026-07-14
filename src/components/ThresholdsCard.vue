@@ -42,6 +42,13 @@
     <div class="field" style="margin-top:16px">
       <label style="margin-bottom:8px">{{ t('thresholds.notifications') }}</label>
       <div class="notif-row">
+        <span>{{ t('thresholds.whatsappAlert') }}</span>
+        <label class="toggle">
+          <input type="checkbox" :checked="station?.waOn" @change="onWaOnChange" />
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="notif-row">
         <span>{{ t('thresholds.browserDialog') }}</span>
         <label class="toggle">
           <input type="checkbox" v-model="configStore.nDialog" @change="configStore.saveConfig(stationsStore.stationsForSave(), stationsStore.activeIdx)" />
@@ -130,6 +137,13 @@ function onMaxOnChange(e: Event) {
   const s = station.value
   if (!s) return
   s.tMaxOn = (e.target as HTMLInputElement).checked
+  save()
+}
+
+function onWaOnChange(e: Event) {
+  const s = station.value
+  if (!s) return
+  s.waOn = (e.target as HTMLInputElement).checked
   save()
 }
 

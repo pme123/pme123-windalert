@@ -11,6 +11,7 @@ export interface Station {
   tAvgOn: boolean
   tMax: number       // stored in km/h internally
   tMaxOn: boolean
+  waOn: boolean      // send WhatsApp alert for this station
   lastAlertAt: number
   chartHours: number
   status: StationStatus
