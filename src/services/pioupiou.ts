@@ -4,11 +4,26 @@ export const PIOUPIOU_LIVE    = 'https://api.pioupiou.fr/v1/live/'
 export const PIOUPIOU_ARCHIVE = 'https://api.pioupiou.fr/v1/archive/'
 export const PIOUPIOU_ALL     = 'https://api.pioupiou.fr/v1/live/all'
 
+// Pioupiou's API sometimes returns latitude/longitude as strings instead of numbers.
+function toNum(v: unknown): number | undefined {
+  if (v == null) return undefined
+  const n = typeof v === 'number' ? v : parseFloat(String(v))
+  return Number.isFinite(n) ? n : undefined
+}
+
+function normalizeLocation<T extends { location?: { latitude?: unknown; longitude?: unknown; success?: boolean } }>(s: T): T {
+  if (s.location) {
+    s.location.latitude  = toNum(s.location.latitude) as never
+    s.location.longitude = toNum(s.location.longitude) as never
+  }
+  return s
+}
+
 export async function fetchWindData(sid: string): Promise<WindData> {
   const r = await fetch(PIOUPIOU_LIVE + sid)
   if (!r.ok) throw new Error(`HTTP ${r.status}`)
   const json = await r.json()
-  return json.data as WindData
+  return normalizeLocation(json.data as WindData)
 }
 
 export async function fetchAllStations(): Promise<OWMStation[]> {
@@ -17,6 +32,7 @@ export async function fetchAllStations(): Promise<OWMStation[]> {
   const json = await r.json()
   return (json.data as OWMStation[])
     .filter(s => s.status?.state === 'on' && s.meta?.name)
+    .map(normalizeLocation)
     .sort((a, b) => a.meta.name.localeCompare(b.meta.name, 'de'))
 }
 

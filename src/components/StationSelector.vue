@@ -154,15 +154,21 @@ const displayValue = computed(() => {
   return `Station ${s.id}`
 })
 
+function toNum(v: unknown): number | null {
+  if (v == null) return null
+  const n = typeof v === 'number' ? v : parseFloat(String(v))
+  return Number.isFinite(n) ? n : null
+}
+
 const mapLat = computed(() => {
   const loc = station.value?.lastData?.location
-  if (!loc?.success || loc.latitude == null) return null
-  return loc.latitude
+  if (!loc?.success) return null
+  return toNum(loc.latitude)
 })
 const mapLon = computed(() => {
   const loc = station.value?.lastData?.location
-  if (!loc?.success || loc.longitude == null) return null
-  return loc.longitude
+  if (!loc?.success) return null
+  return toNum(loc.longitude)
 })
 
 const filteredList = computed((): ListItem[] => {

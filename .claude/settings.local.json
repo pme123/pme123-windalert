@@ -43,7 +43,12 @@
       "WebFetch(domain:pypi.org)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "WebSearch",
-      "Bash(curl -sS \"https://api.holfuy.com/live/\")"
+      "Bash(curl -sS \"https://api.holfuy.com/live/\")",
+      "Bash(curl -sS \"https://api.holfuy.com/archive/\")",
+      "mcp__claude-in-chrome__tabs_context_mcp",
+      "mcp__claude-in-chrome__javascript_tool",
+      "mcp__claude-in-chrome__read_console_messages",
+      "mcp__claude-in-chrome__read_network_requests"
     ]
   }
 }

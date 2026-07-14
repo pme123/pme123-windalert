@@ -79,18 +79,52 @@ export const useConfigStore = defineStore('config', () => {
     })
   }
 
+  // Secrets that must never leave this device (stay in localStorage only, not in the synced file).
+  const STATION_SECRET_FIELDS = ['pw'] as const
+
+  function stripStationSecrets(stationsData: object[]): object[] {
+    return stationsData.map(s => {
+      const copy = { ...(s as Record<string, unknown>) }
+      for (const f of STATION_SECRET_FIELDS) delete copy[f]
+      return copy
+    })
+  }
+
+  // Re-attach locally-known secrets (e.g. Holfuy password) onto stations loaded
+  // from the synced file, matching by id+source, so a folder sync never wipes them.
+  function reattachLocalSecrets(remoteJson: string): string {
+    try {
+      const remote = JSON.parse(remoteJson)
+      const local  = JSON.parse(localStorage.getItem('waCfg2') || '{}')
+      if (!Array.isArray(remote.stations) || !Array.isArray(local.stations)) return remoteJson
+
+      remote.stations = remote.stations.map((s: Record<string, unknown>) => {
+        const match = local.stations.find((l: Record<string, unknown>) => l.id === s.id && l.source === s.source)
+        if (!match) return s
+        const merged = { ...s }
+        for (const f of STATION_SECRET_FIELDS) {
+          if (match[f] != null && s[f] == null) merged[f] = match[f]
+        }
+        return merged
+      })
+      return JSON.stringify(remote)
+    } catch (_e) {
+      return remoteJson
+    }
+  }
+
   function saveConfig(stationsData: object[], activeIdx: number) {
-    const json = buildConfigJson(stationsData, activeIdx)
-    localStorage.setItem('waCfg2', json)
+    localStorage.setItem('waCfg2', buildConfigJson(stationsData, activeIdx))
     if (dirHandle && folderStatus.value === 'connected') {
-      writeConfigFile(dirHandle, json).catch(() => {
+      const fileJson = buildConfigJson(stripStationSecrets(stationsData), activeIdx)
+      writeConfigFile(dirHandle, fileJson).catch(() => {
         folderStatus.value = 'needs-permission'
       })
     }
   }
 
   // Try to silently reconnect to a previously chosen folder (no user gesture).
-  // If a config file is found there, it takes precedence over localStorage.
+  // If a config file is found there, it takes precedence over localStorage (secrets excluded).
   async function initFolderSync(): Promise<void> {
     if (!fsSupported) return
     const handle = await getStoredHandle()
@@ -105,7 +139,7 @@ export const useConfigStore = defineStore('config', () => {
     }
     folderStatus.value = 'connected'
     const text = await readConfigFile(handle)
-    if (text) localStorage.setItem('waCfg2', text)
+    if (text) localStorage.setItem('waCfg2', reattachLocalSecrets(text))
   }
 
   // User-initiated folder pick (requires a click / gesture)
@@ -117,11 +151,15 @@ export const useConfigStore = defineStore('config', () => {
 
     const text = await readConfigFile(handle)
     if (text) {
-      localStorage.setItem('waCfg2', text)
+      localStorage.setItem('waCfg2', reattachLocalSecrets(text))
     } else {
-      // No config there yet — seed it with whatever is currently in localStorage
+      // No config there yet — seed it with whatever is currently in localStorage (secrets excluded)
       const current = localStorage.getItem('waCfg2')
-      if (current) await writeConfigFile(handle, current)
+      if (current) {
+        const parsed = JSON.parse(current)
+        const fileJson = buildConfigJson(stripStationSecrets(parsed.stations ?? []), parsed.activeIdx ?? 0)
+        await writeConfigFile(handle, fileJson)
+      }
     }
   }
 
@@ -132,7 +170,7 @@ export const useConfigStore = defineStore('config', () => {
     if (!granted) return
     folderStatus.value = 'connected'
     const text = await readConfigFile(dirHandle)
-    if (text) localStorage.setItem('waCfg2', text)
+    if (text) localStorage.setItem('waCfg2', reattachLocalSecrets(text))
   }
 
   async function disconnectFolder(): Promise<void> {

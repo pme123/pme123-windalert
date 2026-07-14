@@ -10,8 +10,7 @@ import L from 'leaflet'
 import type { Map as LMap } from 'leaflet'
 import { useStationsStore } from '../stores/stations'
 import { fetchMSWMeta, getMswMetaArr } from '../services/meteoswiss'
-import { fetchAllStations } from '../services/pioupiou'
-import type { OWMStation, MSWStationMeta } from '../types'
+import type { MSWStationMeta } from '../types'
 
 const mapEl         = ref<HTMLElement | null>(null)
 const stationsStore = useStationsStore()
@@ -72,14 +71,14 @@ function tipHtml(name: string, speed: number | null, gust: number | null, dir: n
     </div>`
 }
 
-// All static station lists
-let piouStations: OWMStation[]    = []
-let mswStations:  MSWStationMeta[] = []
+// All static station lists (grey dots) — loaded lazily in the background,
+// cached across visits so re-opening the map doesn't refetch/reparse them.
+let mswStations: MSWStationMeta[] = []
 
 async function loadStaticStations() {
   await Promise.allSettled([
     fetchMSWMeta(),
-    fetchAllStations().then(r => { piouStations = r }),
+    stationsStore.loadOWMStations(),
   ])
   mswStations = getMswMetaArr()
   renderMarkers()
@@ -111,7 +110,7 @@ function renderMarkers() {
   }
 
   // --- Pioupiou stations ---
-  for (const st of piouStations) {
+  for (const st of stationsStore.owmStations) {
     if (!st.location?.latitude || !st.location?.longitude) continue
     const sid    = String(st.id)
     const isOpen = openPiou.has(sid)
@@ -178,7 +177,10 @@ onMounted(async () => {
     maxZoom: 19,
   }).addTo(leafletMap)
   markerLayer.addTo(leafletMap)
-  await loadStaticStations()
+  // Show already-known live stations immediately (no network needed);
+  // the large provider-wide station lists (grey dots) load in the background.
+  renderMarkers()
+  loadStaticStations()
 })
 
 onBeforeUnmount(() => {

@@ -79,7 +79,7 @@ onMounted(async () => {
 function onTabChanged(idx: number) {
   showMap.value = false
   const s = stationsStore.stations[idx]
-  if (!s.chartRows && s.id && s.source === 'pioupiou') {
+  if (!s.chartRows && s.id && s.source !== 'wunderground') {
     stationsStore.loadChartData(s.chartHours ?? 24)
   }
 }

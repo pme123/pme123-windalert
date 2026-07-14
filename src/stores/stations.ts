@@ -5,7 +5,7 @@ import { useConfigStore } from './config'
 import { fetchWindData, fetchAllStations, fetchArchive } from '../services/pioupiou'
 import { fetchMSWStation, fetchMSWMeta, fetchMSWArchive, getMswMeta, getMswMetaArr } from '../services/meteoswiss'
 import { fetchWUStation } from '../services/wunderground'
-import { fetchHolfuyStation } from '../services/holfuy'
+import { fetchHolfuyStation, fetchHolfuyArchive } from '../services/holfuy'
 import { useUnits } from '../composables/useUnits'
 import { i18n } from '../i18n'
 
@@ -222,7 +222,7 @@ export const useStationsStore = defineStore('stations', () => {
       let data: WindData
       if (s.source === 'meteoswiss') {
         data = await fetchMSWStation(s.id)
-      } else if (s.source === 'wunderground' || s.source === 'holfuy') {
+      } else if (s.source === 'wunderground') {
         data = await fetchWUStation(s.id, configStore.wuKey)
       } else if (s.source === 'holfuy') {
         data = await fetchHolfuyStation(s.id, s.pw ?? '', configStore.holfuyProxy)
@@ -251,7 +251,7 @@ export const useStationsStore = defineStore('stations', () => {
   async function refreshAllCharts() {
     const results = await Promise.allSettled(
       stations.value.map(s => {
-        if (!s.id || s.source === 'wunderground' || s.source === 'holfuy') return Promise.resolve()
+        if (!s.id || s.source === 'wunderground') return Promise.resolve()
         const idx = stations.value.indexOf(s)
         return loadChartData_forStation(idx, s.chartHours ?? 24)
       })
@@ -264,10 +264,12 @@ export const useStationsStore = defineStore('stations', () => {
   // Internal: load chart data for a specific station by index
   async function loadChartData_forStation(idx: number, hours: number): Promise<void> {
     const s = stations.value[idx]
-    if (!s?.id || s.source === 'wunderground' || s.source === 'holfuy') return
+    if (!s?.id || s.source === 'wunderground') return
     s.chartHours = hours
     const rows = s.source === 'meteoswiss'
       ? await fetchMSWArchive(s.id, hours)
+      : s.source === 'holfuy'
+      ? await fetchHolfuyArchive(s.id, s.pw ?? '', configStore.holfuyProxy, hours)
       : await fetchArchive(s.id, hours)
     s.chartRows = rows
   }
@@ -331,7 +333,7 @@ export const useStationsStore = defineStore('stations', () => {
   async function loadChartData(hours: number): Promise<void> {
     const idx = activeIdx.value
     const s   = stations.value[idx]
-    if (!s?.id || s.source === 'wunderground' || s.source === 'holfuy') return
+    if (!s?.id || s.source === 'wunderground') return
     try {
       await loadChartData_forStation(idx, hours)
     } catch (e) {
