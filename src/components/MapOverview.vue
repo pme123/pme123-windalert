@@ -172,8 +172,8 @@ watch(
 onMounted(async () => {
   if (!mapEl.value) return
   leafletMap = L.map(mapEl.value, { zoomControl: true }).setView([46.82, 8.22], 8)
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a> © <a href="https://carto.com/attributions">CARTO</a>',
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     maxZoom: 19,
   }).addTo(leafletMap)
   markerLayer.addTo(leafletMap)

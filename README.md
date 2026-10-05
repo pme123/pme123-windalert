@@ -28,7 +28,7 @@ Pushing to `main` automatically builds and deploys to GitHub Pages via the inclu
 | Vite | Build tool and dev server |
 | Pinia | State management (two stores: `config`, `stations`) |
 | Chart.js | Wind history chart |
-| Leaflet | Station location map (CartoDB Voyager tiles) |
+| Leaflet | Station location map (OpenStreetMap tiles) |
 
 ## Data sources
 

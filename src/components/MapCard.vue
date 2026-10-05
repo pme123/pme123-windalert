@@ -42,9 +42,9 @@ function initMap(lat: number, lon: number) {
     loading.value = true
     leafletMap = L.map(mapEl.value, { zoomControl: true }).setView([lat, lon], 10)
     tileLayer = L.tileLayer(
-      'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
       {
-        attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a> © <a href="https://carto.com/attributions">CARTO</a>',
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19,
       }
     ).addTo(leafletMap)
