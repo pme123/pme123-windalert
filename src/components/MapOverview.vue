@@ -175,6 +175,7 @@ onMounted(async () => {
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     maxZoom: 19,
+    opacity: 0.5,
   }).addTo(leafletMap)
   markerLayer.addTo(leafletMap)
   // Show already-known live stations immediately (no network needed);
