@@ -2,8 +2,8 @@
   <div class="header">
     <a href="https://z9nai.ch" target="_blank" rel="noopener" class="z9-brand-link">
       <div class="z9-logo-wrap">
-        <img src="https://z9nai.ch/assets/logo_new-DwOlNuuy.png"       alt="z9nai" class="z9-logo-color">
-        <img src="https://z9nai.ch/assets/logo_new_white-BXK2S0Ym.png" alt="z9nai" class="z9-logo-white">
+        <img src="/z9nai-logo.png"       alt="z9nai" class="z9-logo-color">
+        <img src="/z9nai-logo-white.png" alt="z9nai" class="z9-logo-white">
       </div>
       <h1>Wind Alert</h1>
       <div class="z9-byline">by z9nai GmbH</div>
